@@ -1,0 +1,554 @@
+<!-- TAPE LOADER V13 -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ZX TAPE LOADER — V13</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#14110e;--panel:#1b1611;--line:#2f281f;--txt:#D9D2C2;--dim:#7d745f;--key:#E4DBC6;--ink:#17130e;--red:#D70000}
+body{min-height:100svh;background:var(--bg);color:var(--txt);font-family:'Space Mono','Courier New',monospace;
+ display:flex;align-items:center;justify-content:center;padding:26px 14px}
+.wrap{width:min(760px,100%)}
+header{display:flex;justify-content:space-between;align-items:baseline;gap:14px;border-bottom:1px solid #241e16;padding-bottom:12px}
+.brand{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:700;letter-spacing:.26em}
+.sq{width:10px;height:10px;background:var(--red);flex:none}
+.spec{font-size:9px;font-weight:700;letter-spacing:.2em;color:var(--dim);text-align:right}
+.bezel{margin-top:16px;background:#1e1913;border:1px solid #332b21;border-radius:16px;padding:16px;box-shadow:0 30px 60px -30px rgba(0,0,0,.8)}
+.glass{position:relative;aspect-ratio:4/3;background:#000;border:8px solid #0d0a08;border-radius:12px;overflow:hidden;cursor:pointer}
+canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.tag{position:absolute;top:8px;right:8px;z-index:6;background:var(--red);color:#fff;font-size:9px;font-weight:700;
+ letter-spacing:.22em;padding:3px 8px;border-radius:3px;pointer-events:none}
+.ov{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;pointer-events:none}
+.ovb{background:rgba(8,6,4,.85);border:2px solid #EDE7D6;color:#EDE7D6;font-weight:700;font-size:clamp(13px,2.6vw,20px);letter-spacing:.3em;padding:12px 20px}
+.oves{background:rgba(8,6,4,.75);color:#C9C2AC;font-size:10px;font-weight:700;letter-spacing:.26em;padding:6px 12px}
+.deck{margin-top:16px;display:flex;gap:24px;align-items:center;flex-wrap:wrap;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 18px}
+.tape{width:280px;flex:none}
+.tape text{font-family:'Space Mono',monospace}
+.t1{font-size:9px;letter-spacing:.18em;font-weight:700;fill:#8a7f66}
+.t2{font-size:24px;font-weight:700;fill:#221c12}
+.t3{font-size:8.5px;letter-spacing:.14em;fill:#4a4232}
+.t4{font-size:9px;letter-spacing:.2em;font-weight:700;fill:#a33c2c}
+.panel{flex:1;min-width:250px;display:flex;flex-direction:column;gap:12px}
+.lab{font-size:9px;font-weight:700;letter-spacing:.26em;color:var(--dim)}
+.row{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.digits{display:flex;gap:4px;margin-top:6px}
+.digits span{width:23px;height:30px;line-height:30px;text-align:center;background:#0c0a07;border-radius:4px;
+ font-size:18px;font-weight:700;color:var(--key);box-shadow:inset 0 2px 5px rgba(0,0,0,.9)}
+.motor{display:flex;flex-direction:column;align-items:center;gap:6px}
+#motor{width:10px;height:10px;border-radius:50%;background:#3a3129;transition:.15s}
+#motor.on{background:var(--red);box-shadow:0 0 8px 1px rgba(215,0,0,.65)}
+.keys{display:flex;gap:9px}
+.keys button{flex:1;padding:10px 0;border:none;border-radius:6px;background:var(--key);color:var(--ink);
+ font:700 12px 'Space Mono',monospace;letter-spacing:.16em;box-shadow:0 3px 0 #060504;cursor:pointer}
+.keys button.held{transform:translateY(3px);box-shadow:none;background:#d5ccb4}
+.row2{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.spd{display:flex;gap:6px;align-items:center}
+.spd button{padding:5px 10px;border:1px solid #3a3125;background:none;color:var(--dim);font:700 10px 'Space Mono',monospace;border-radius:4px;cursor:pointer}
+.spd button.on{background:var(--red);border-color:var(--red);color:#fff}
+#phaseLab{font-size:10px;font-weight:700;letter-spacing:.14em;color:var(--txt)}
+.vrow{display:flex;align-items:center;gap:12px}
+input[type=range]{flex:1;-webkit-appearance:none;appearance:none;height:4px;background:#3a3125;border-radius:2px;cursor:pointer;outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--key)}
+input[type=range]::-moz-range-thumb{width:13px;height:13px;border-radius:50%;background:var(--key);border:none}
+footer{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-top:12px;margin-top:16px;border-top:1px solid #241e16;font-size:9px;font-weight:700;letter-spacing:.16em;color:var(--dim)}
+#calmBtn{background:none;border:none;font:inherit;color:inherit;cursor:pointer;text-decoration:underline dotted}
+</style>
+</head>
+<body data-state="stop">
+<div class="wrap">
+<header>
+ <div class="brand"><i class="sq"></i>TAPE LOADER V13</div>
+ <div class="spec">V13 · NAME PRINTS AFTER HEADER ZIP (ROM-CORRECT)</div>
+</header>
+
+<div class="bezel">
+ <div class="glass" id="glass">
+  <canvas id="scr"></canvas>
+  <div class="ov" id="ov"><div class="ovb">TAPE LOADER V13</div><div class="oves">FRESH FILE · RENDER OK · PRESS PLAY</div></div>
+  <div class="tag">V13</div>
+ </div>
+</div>
+
+<div class="deck">
+ <svg class="tape" viewBox="0 0 320 204" aria-hidden="true">
+  <rect x="3" y="3" width="314" height="198" rx="14" fill="#241d15" stroke="#3a3125" stroke-width="2"/>
+  <rect x="20" y="14" width="280" height="100" rx="6" fill="#E7DEC8" stroke="#cfc3a4"/>
+  <rect x="20" y="14" width="9" height="100" rx="3" fill="#D70000"/>
+  <text x="44" y="34" class="t1">TDK D-90 · LOW NOISE</text>
+  <text x="286" y="34" class="t4" text-anchor="end">SIDE A</text>
+  <text x="44" y="66" class="t2">LOAD ""</text>
+   <text x="44" y="90" class="t3">KLOTZ 48K — PAPER ARCADE</text>
+  <text x="44" y="100" class="t3">SOME_CV — DS\ML</text>
+  <rect x="38" y="106" width="244" height="72" rx="10" fill="#0f0c09" stroke="#090705" stroke-width="2"/>
+  <circle id="tapeL" cx="104" cy="142" r="26" fill="#33241a" stroke="#120d09" stroke-width="3"/>
+  <circle id="tapeR" cx="216" cy="142" r="16" fill="#33241a" stroke="#120d09" stroke-width="3"/>
+  <g transform="translate(104,142)"><g id="reelL"></g></g>
+  <g transform="translate(216,142)"><g id="reelR"></g></g>
+  <circle cx="38" cy="187" r="4.5" fill="#3b3125" stroke="#191510"/>
+  <circle cx="282" cy="187" r="4.5" fill="#3b3125" stroke="#191510"/>
+  <path d="M132 182 h56 l8 16 h-72 z" fill="#151009" stroke="#0a0806"/>
+  <circle cx="100" cy="190" r="3.4" fill="#191510"/>
+  <circle cx="220" cy="190" r="3.4" fill="#191510"/>
+ </svg>
+
+ <div class="panel">
+  <div class="row">
+   <div><span class="lab">COUNTER</span><div class="digits" id="digits"><span>0</span><span>0</span><span>0</span><span>0</span></div></div>
+   <div class="motor"><i id="motor"></i><span class="lab">MOTOR</span></div>
+  </div>
+  <div class="keys">
+   <button id="btnPlay">PLAY</button><button id="btnStop">STOP</button><button id="btnRew">REW</button>
+  </div>
+  <div class="row2">
+   <div class="spd"><span class="lab">SPEED</span><button id="sp1" class="on">×1</button><button id="sp4">×4</button></div>
+   <div><span class="lab">BLOCK</span> <span id="phaseLab">—</span></div>
+  </div>
+  <div class="vrow"><span class="lab">VOL</span><input id="vol" type="range" min="0" max="100" value="70"></div>
+ </div>
+</div>
+
+<footer><span>V13 · SPACE PLAY/STOP · R REWIND</span><span>FLASHING · <button id="calmBtn">CALM: OFF</button></span></footer>
+</div>
+
+<script>
+(()=>{ 'use strict';
+console.log('TAPE LOADER V13 · name printed right after the header zip');
+/* ---- ROM pulse timings (48K, 3.5 MHz) — exact, no modulation ---- */
+const PILOT=2168/3.5e6,S1=667/3.5e6,S2=735/3.5e6,B0=855/3.5e6,B1=1710/3.5e6;
+const FIELD=.02,VIS=.0184,NAME='KLOTZ',TAPEV=8637;
+const RED=[215,0,0],CYAN=[0,215,215],WHITE=[220,220,212];
+let vol=.7,calm=false,rate=1;
+
+/* ---- 8x8 font subset ---- */
+const F={' ':[0,0,0,0,0,0,0,0],
+'0':[0x3C,0x66,0x6E,0x76,0x66,0x66,0x3C,0],'1':[0x18,0x38,0x18,0x18,0x18,0x18,0x7E,0],
+'9':[0x3C,0x66,0x66,0x3E,0x06,0x66,0x3C,0],
+'-':[0,0,0,0x7E,0,0,0,0],',':[0,0,0,0,0,0x18,0x18,0x30],':':[0,0x18,0x18,0,0x18,0x18,0,0],
+'A':[0x3C,0x66,0x66,0x7E,0x66,0x66,0x66,0],'C':[0x3C,0x66,0x60,0x60,0x60,0x66,0x3C,0],
+'D':[0x7C,0x66,0x66,0x66,0x66,0x66,0x7C,0],'E':[0x7E,0x60,0x60,0x7C,0x60,0x60,0x7E,0],
+'K':[0x66,0x66,0x6C,0x78,0x6C,0x66,0x66,0],'L':[0x60,0x60,0x60,0x60,0x60,0x60,0x7E,0],
+'M':[0x66,0x7E,0x7E,0x66,0x66,0x66,0x66,0],
+'O':[0x3C,0x66,0x66,0x66,0x66,0x66,0x3C,0],'P':[0x3C,0x66,0x66,0x7E,0x66,0x66,0x66,0],
+'R':[0x7C,0x66,0x66,0x7C,0x6C,0x66,0x66,0],'T':[0x7E,0x18,0x18,0x18,0x18,0x18,0x18,0],
+'V':[0x66,0x66,0x66,0x66,0x66,0x3C,0x18,0],
+'Z':[0x7E,0x06,0x0C,0x18,0x30,0x60,0x7E,0],
+'a':[0,0,0,0x3C,0x06,0x3E,0x66,0x3E],'e':[0,0,0,0x3C,0x7E,0x60,0x3C,0],
+'g':[0,0,0x3C,0x66,0x66,0x3E,0x06,0x3C],'m':[0,0,0,0x76,0x7E,0x6E,0x66,0],
+'o':[0,0,0,0x3C,0x66,0x66,0x3C,0],'r':[0,0,0,0x1C,0x36,0x30,0x30,0]};
+
+/* ---- sunset loading screen (unchanged) ---- */
+const art=new Uint8Array(6144);
+const px=(x,y)=>{if(x>=0&&x<256&&y>=0&&y<184)art[y*32+(x>>3)]|=0x80>>(x&7);};
+function txt(s,x0,y0,sc){let x=x0;for(const ch of s){const g=F[ch];if(!g){x+=8*sc;continue;}
+ for(let r=0;r<8;r++){const b=g[r];if(!b)continue;
+  for(let c=0;c<8;c++)if(b&(0x80>>c))
+   for(let dy=0;dy<sc;dy++)for(let dx=0;dx<sc;dx++)px(x+c*sc+dx,y0+r*sc+dy);}
+ x+=8*sc;}}
+txt('KLOTZ',16,12,4);
+txt('PAPER ARCADE',64,52,1);
+for(let y=56;y<=92;y++)for(let x=166;x<=202;x++)if((x-184)*(x-184)+(y-74)*(y-74)<=324)px(x,y);
+[[52,62],[82,54],[112,63]].forEach(p=>{px(p[0],p[1]);px(p[0]+1,p[1]+1);px(p[0]+2,p[1]);});
+const pk=[[0,118],[36,92],[72,108],[108,84],[150,102],[192,88],[228,104],[255,114]];
+for(let x=0;x<256;x++){let i=0;while(i<pk.length-2&&pk[i+1][0]<x)i++;
+ const t=(x-pk[i][0])/(pk[i+1][0]-pk[i][0]);
+ const my=Math.round(pk[i][1]+(pk[i+1][1]-pk[i][1])*t);
+ for(let y=my;y<144;y++)px(x,y);}
+for(let y=144;y<176;y++)for(let x=0;x<256;x++)if((y&3)===1&&(x+y*5)%9<6)px(x,y);
+for(let y=146;y<172;y+=3)for(let x=172;x<198;x++)if((x+y)%7<4)px(x,y);
+for(let i=0;i<140;i++){const x=i*67%256,y=177+i*37%7;px(x,y);if(i%4===0)px(x,y-1);}
+
+/* ---- attributes (8x8 cells) ---- */
+const N5=[[0,0,0],[0,0,205],[205,0,0],[205,0,205],[0,205,0],[0,205,205],[205,205,0],[205,205,205]];
+const B5=[[0,0,0],[0,0,255],[255,0,0],[255,0,255],[0,255,0],[0,255,255],[255,255,0],[255,255,255]];
+const attr=new Uint8Array(768),inkC=new Array(768),papC=new Array(768);
+for(let cy=0;cy<24;cy++)for(let cx=0;cx<32;cx++){
+ let a;
+ if(cy>=23)a=[0,0,0];else if(cy===22)a=[0,6,0];
+ else if(cy>=18)a=(cx>=20&&cx<=25)?[6,1,1]:[7,1,1];
+ else if(cy>=7&&cy<=11&&cx>=20&&cx<=25)a=[6,2,1];
+ else if(cy===6&&cx>=8&&cx<=19)a=[7,1,0];
+ else if(cy>=6)a=[0,2,1];
+ else if(cy>=1&&cx>=2&&cx<=22)a=[6,1,1];else a=[0,1,0];
+ const i=cy*32+cx,q=a[2]?B5:N5;
+ attr[i]=a[0]|a[1]<<3|a[2]<<6;inkC[i]=q[a[0]];papC[i]=q[a[1]];}
+const scrAll=new Uint8Array(6912);
+scrAll.set(art,0);scrAll.set(attr,6144);
+
+/* ---- tape bytes, typed: 0 framing / 1 screen paint / 2 plain data ---- */
+const TB=[],TK=[],TP=[];
+function blk(flag,data,kind){
+ TB.push(flag);TK.push(0);TP.push(0);let x=flag;
+ for(let i=0;i<data.length;i++){TB.push(data[i]);TK.push(kind);TP.push(i);x^=data[i];}
+ TB.push(x);TK.push(0);TP.push(0);}
+{const hb=[0];for(let i=0;i<10;i++)hb.push(i<NAME.length?NAME.charCodeAt(i):32);
+ hb.push(300&255,300>>8,0,0,0,128);blk(0,hb,0);}
+{const lb=new Uint8Array(300);for(let i=0;i<300;i++)lb[i]=i*97+43&255;blk(255,lb,2);}
+blk(255,scrAll,1);
+{const cb=new Uint8Array(1400);let s=12345;
+ for(let i=0;i<1400;i++){s=s*1664525+1013904223>>>0;cb[i]=s&255;}blk(255,cb,2);}
+const N=TB.length;
+
+/* ---- 256x192 picture ---- */
+const picCan=document.createElement('canvas');picCan.width=256;picCan.height=192;
+const picCtx=picCan.getContext('2d'),picData=picCtx.createImageData(256,192);
+let picDirty=true;
+const INK=[24,24,22],PAP=[213,211,199],WHT=[212,212,202],BLK=[0,0,0];
+function sp2(x,y,c){const i=(y*256+x)<<2,d=picData.data;d[i]=c[0];d[i+1]=c[1];d[i+2]=c[2];d[i+3]=255;}
+function resetPic(){for(let y=0;y<184;y++)for(let x=0;x<256;x++)sp2(x,y,PAP);
+ for(let y=184;y<192;y++)for(let x=0;x<256;x++)sp2(x,y,BLK);picDirty=true;}
+function revealBM(p){const row=p>>5;if(row>=184)return;
+ const x0=(p&31)*8,v=art[p];
+ for(let k=0;k<8;k++)sp2(x0+k,row,v&(0x80>>k)?INK:PAP);}
+function revealAttr(p){const cx=p&31,cy=p>>5,i=cy*32+cx;
+ for(let sy=0;sy<8;sy++){const y=cy*8+sy,v=art[y*32+cx];
+  for(let sx=0;sx<8;sx++)sp2(cx*8+sx,y,v&(0x80>>sx)?inkC[i]:papC[i]);}}
+function renderFullColor(){for(let i=0;i<768;i++)revealAttr(i);}
+function romPrint(s){for(let y=184;y<192;y++)for(let x=0;x<256;x++)sp2(x,y,BLK);
+ let x=0;for(const ch of s){const g=F[ch];if(g)for(let r=0;r<8;r++){const b=g[r];
+  for(let c=0;c<8;c++)if(b&(0x80>>c))sp2(x+c,184+r,WHT);}x+=8;}picDirty=true;}
+
+/* ---- audio ---- */
+const A={ctx:null,master:null,hiss:null,nz:null};
+function initAudio(){
+ if(A.ctx)return;const AC=window.AudioContext||window.webkitAudioContext;
+ A.ctx=new AC();A.master=A.ctx.createGain();A.master.gain.value=.55*vol;
+ A.master.connect(A.ctx.destination);
+ const sr=A.ctx.sampleRate,b=A.ctx.createBuffer(1,sr*1.5,sr),d=b.getChannelData(0);
+ for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+ A.nz=b;const s=A.ctx.createBufferSource();s.buffer=b;s.loop=true;
+ const f=A.ctx.createBiquadFilter();f.type='highpass';f.frequency.value=900;
+ A.hiss=A.ctx.createGain();A.hiss.gain.value=0;
+ s.connect(f);f.connect(A.hiss);A.hiss.connect(A.master);s.start();}
+function clunk(){if(!A.ctx)return;const t=A.ctx.currentTime,o=A.ctx.createOscillator(),g=A.ctx.createGain();
+ o.type='sine';o.frequency.setValueAtTime(120,t);
+ o.frequency.exponentialRampToValueAtTime(45,t+.09);
+ g.gain.setValueAtTime(.5,t);g.gain.exponentialRampToValueAtTime(.001,t+.12);
+ o.connect(g);g.connect(A.master);o.start(t);o.stop(t+.14);}
+
+/* ---- streaming tape engine (signal identical to V12) ---- */
+const EM={ph:'idle',segIx:0,level:1,color:0,pilotLeft:0,pauseLeft:0,
+ byteIx:0,bitIx:0,halfs:0,halfLen:0,halfLeft:0,curByte:0,syncPh:0,
+ sil:false,rewLeft:0,rewTotal:1,restartAt:0};
+const events=[];let c0=0;
+const paintQ=[];
+let uiState='stop',prevWasPlay=false,previewEnd=-1,coverDirty=true;
+let tapeCounter=0,tapeUsed=0,lastColor=0;
+const phaseLab=document.getElementById('phaseLab');
+const setLabel=s=>{if(phaseLab.textContent!==s)phaseLab.textContent=s;};
+
+let SEGS=[];
+function buildSegs(){
+ SEGS=[
+  {k:'pilot',d:1.8},
+  {k:'block',off:0,len:19,lab:'HEADER'},
+  {k:'pause',d:.7},
+  {k:'pilot',d:1.4},
+  {k:'block',off:19,len:302,lab:'LOADER'},
+  {k:'pause',d:1.8},
+  {k:'pilot',d:3.2},
+  {k:'block',off:321,len:6914,lab:'SCREEN$'},
+  {k:'pause',d:1.2},
+  {k:'pilot',d:2.0},
+  {k:'block',off:7235,len:1402,lab:'CODE'},
+  {k:'pause',d:1.0},
+  {k:'end'}];
+}
+function applySeg(tNow){
+ const s=SEGS[EM.segIx];
+ if(!s||s.k==='end'){endTape(tNow);return;}
+ EM.ph=s.k;
+ const sr=A.ctx.sampleRate,ts=1/rate;
+ paintQ.push({t:tNow,lab:s.k==='pilot'?'PILOT':s.k==='pause'?'GAP':s.lab});
+ if(s.k==='pilot'){EM.pilotLeft=s.d*ts*sr;return;}
+ if(s.k==='pause'){EM.pauseLeft=s.d*ts*sr;return;}
+ EM.bitIx=0;EM.byteIx=0;EM.halfs=0;EM.halfLeft=0;EM.syncPh=1;
+ EM.curByte=TB[s.off];
+}
+function advanceByte(tNow){
+ const s=SEGS[EM.segIx];
+ EM.byteIx++;
+ paintQ.push({t:tNow,gi:s.off+EM.byteIx-1});
+ if(EM.byteIx>=s.len){
+  if(s.lab==='HEADER')paintQ.push({t:tNow,act:'prog'}); /* V13: the real ROM prints the name the instant the header is decoded */
+  EM.segIx++;applySeg(tNow);
+ }else{
+  EM.curByte=TB[s.off+EM.byteIx];
+ }
+}
+function nextHalfLen(tNow){
+ const sr=A.ctx.sampleRate,ts=1/rate;
+ for(;;){
+  if(EM.ph==='pilot'){
+   const len=Math.max(1,Math.round(PILOT*ts*sr));
+   EM.pilotLeft-=len;
+   if(EM.pilotLeft<=0){EM.segIx++;applySeg(tNow);continue;}
+   return len;
+  }
+  if(EM.ph==='block'){
+   if(EM.syncPh===1){EM.syncPh=2;return Math.max(1,Math.round(S1*ts*sr));}
+   if(EM.syncPh===2){EM.syncPh=0;return Math.max(1,Math.round(S2*ts*sr));}
+   if(EM.halfs===0){
+    const bit=EM.bitIx===0?0:EM.bitIx<=8?(EM.curByte>>(EM.bitIx-1))&1:1;
+    EM.halfLen=Math.max(1,Math.round((bit?B1:B0)*ts*sr));EM.halfs=2;
+   }
+   EM.halfs--;const len=EM.halfLen;
+   if(EM.halfs===0){
+    EM.bitIx++;
+    if(EM.bitIx>=10){EM.bitIx=0;advanceByte(tNow);}
+   }
+   return len;
+  }
+  return 0;
+ }
+}
+function endTape(tNow){
+ EM.ph='end';EM.sil=true;EM.restartAt=tNow+3.5;
+ events.push({t:tNow+.005,c:2});
+ paintQ.push({t:tNow+.005,act:'ok'});
+ paintQ.push({t:tNow+.005,lab:'LOADED'});
+}
+function resetRun(tNow){
+ buildSegs();
+ EM.segIx=0;EM.sil=false;EM.halfLeft=0;EM.syncPh=0;
+ EM.level=1;EM.color=0;EM.ph='idle';
+ events.length=0;paintQ.length=0;c0=0;
+ tapeCounter=0;tapeUsed=0;
+ resetPic();
+ applySeg(tNow!==undefined?tNow:(A.ctx?A.ctx.currentTime:0));
+}
+const seq={on:false,schedUntil:0,tm:0,srcs:[],
+ start(){if(this.on)return;this.on=true;
+  this.schedUntil=A.ctx.currentTime+.08;this.loop();},
+ loop(){
+  if(!this.on)return;
+  while(this.on&&this.schedUntil<A.ctx.currentTime+1.4)this.gen();
+  if(!this.on)return;
+  this.tm=setTimeout(()=>this.loop(),200);
+ },
+ gen(){
+  const sr=A.ctx.sampleRate,Nn=4096;
+  const buf=A.ctx.createBuffer(1,Nn,sr),d=buf.getChannelData(0);
+  const t0c=this.schedUntil;let i=0;
+  while(i<Nn){
+   if(EM.ph==='rew'){
+    if(EM.halfLeft<=0){
+     EM.level=-EM.level;EM.color^=1;
+     events.push({t:t0c+i/sr,c:EM.color});
+     const p=1-EM.rewLeft/EM.rewTotal;
+     const env=.45+1.35*Math.sin(Math.PI*Math.min(p,.999));
+     EM.halfLeft=Math.max(1,Math.round((2.6+Math.random()*5.2)/env*sr/1000));
+     continue;
+    }
+    const n=Math.min(EM.halfLeft,Nn-i),s=EM.level*.42;
+    for(let k=0;k<n;k++)d[i+k]=s;
+    EM.halfLeft-=n;EM.rewLeft-=n;i+=n;
+    if(EM.rewLeft<=0){finishRew();break;}
+    continue;
+   }
+   if(EM.sil){
+    if(EM.ph==='end'&&t0c+i/sr>=EM.restartAt){resetRun(t0c+i/sr);continue;}
+    if(EM.ph==='pause'){
+     const n=Math.min(Math.ceil(EM.pauseLeft),Nn-i);
+     for(let k=0;k<n;k++)d[i+k]=0;
+     EM.pauseLeft-=n;i+=n;
+     if(EM.pauseLeft<=0){EM.segIx++;applySeg(t0c+i/sr);
+      if(EM.ph==='pilot'||EM.ph==='block')EM.sil=false;}
+     continue;
+    }
+    for(let k=i;k<Nn;k++)d[k]=0;i=Nn;continue;
+   }
+   if(EM.halfLeft<=0){
+    const len=nextHalfLen(t0c+i/sr);
+    if(len===0){EM.sil=true;continue;}
+    EM.level=-EM.level;EM.color^=1;
+    events.push({t:t0c+i/sr,c:EM.color});
+    EM.halfLeft=len;
+    continue;
+   }
+   const n=Math.min(EM.halfLeft,Nn-i),s=EM.level*.42;
+   for(let k=0;k<n;k++)d[i+k]=s;
+   EM.halfLeft-=n;i+=n;
+  }
+  if(i<Nn)for(let k=i;k<Nn;k++)d[k]=0;
+  const src=A.ctx.createBufferSource();
+  src.buffer=buf;src.connect(A.master);src.start(t0c);src._t=t0c;
+  this.srcs.push(src);
+  if(this.srcs.length>40)this.srcs.splice(0,this.srcs.length-40);
+  this.schedUntil+=Nn/sr;
+ },
+ halt(){this.on=false;clearTimeout(this.tm);
+  for(const s of this.srcs){try{s.stop()}catch(e){}}this.srcs=[];}
+};
+
+/* ---- renderer: 50 Hz field-locked border + render-side drift ---- */
+const cv=document.getElementById('scr'),g=cv.getContext('2d');
+let dpr=1,cw=0,chh=0;
+function size(){const r=cv.getBoundingClientRect();
+ dpr=Math.min(devicePixelRatio||1,2);
+ cv.width=Math.max(2,Math.round(r.width*dpr));
+ cv.height=Math.max(2,Math.round(r.height*dpr));cw=r.width;chh=r.height;}
+addEventListener('resize',size);addEventListener('load',size);size();
+const NB=264,bc=document.createElement('canvas');bc.width=2;bc.height=NB;
+const bg=bc.getContext('2d'),bi=bg.createImageData(2,NB),PR=new Float32Array(NB*3);
+let lastField=-1;
+function drawCRT(tNow){
+ const fIx=Math.floor(tNow/FIELD);
+ if(fIx!==lastField){
+  lastField=fIx;
+  const fs=fIx*FIELD;
+  const drift=calm?0:(2.2e-3*Math.sin(tNow*2.51)+.6e-3*Math.sin(tNow*9.7));
+  const keep=calm?.5:.32,mix=1-keep,d=bi.data;
+  let ev=0,cur=c0;
+  for(let j=0;j<NB;j++){
+   const td=fs+(j+.5)*VIS/NB+drift;
+   while(ev<events.length&&events[ev].t<=td){cur=events[ev].c;ev++;}
+   const col=cur===1?CYAN:cur===2?WHITE:RED,o=j*3;
+   PR[o]+=(col[0]*.8-PR[o])*mix;
+   PR[o+1]+=(col[1]*.8-PR[o+1])*mix;
+   PR[o+2]+=(col[2]*.8-PR[o+2])*mix;
+   const q=j*8;
+   d[q]=Math.min(255,PR[o]);d[q+1]=Math.min(255,PR[o+1]);
+   d[q+2]=Math.min(255,PR[o+2]);d[q+3]=255;
+   d[q+4]=d[q];d[q+5]=d[q+1];d[q+6]=d[q+2];d[q+7]=255;
+  }
+  lastColor=cur;
+  bg.putImageData(bi,0,0);
+ }
+ g.imageSmoothingEnabled=true;
+ g.drawImage(bc,0,0,cw,chh);
+}
+function draw(t){
+ g.setTransform(dpr,0,0,dpr,0,0);
+ const wantFull=uiState==='stop'||(previewEnd>0&&t<previewEnd);
+ if(wantFull&&coverDirty){
+  renderFullColor();
+  romPrint(uiState==='stop'?'TAPE LOADER V13 - READY':'0 OK, 0:1');
+  coverDirty=false;
+ }
+ if(picDirty){picCtx.putImageData(picData,0,0);picDirty=false;}
+ if(wantFull){g.fillStyle='#050403';g.fillRect(0,0,cw,chh);}
+ else drawCRT(t);
+ g.imageSmoothingEnabled=false;
+ g.drawImage(picCan,cw*.1,chh*.1,cw*.8,chh*.8);
+}
+
+/* ---- deck controls ---- */
+const ov=document.getElementById('ov'),motor=document.getElementById('motor'),
+ dig=[...document.querySelectorAll('#digits span')],
+ btnPlay=document.getElementById('btnPlay'),btnStop=document.getElementById('btnStop'),
+ btnRew=document.getElementById('btnRew'),
+ rl=document.getElementById('reelL'),rr=document.getElementById('reelR'),
+ tapeL=document.getElementById('tapeL'),tapeR=document.getElementById('tapeR');
+{const teeth=[...Array(6)].map((_,i)=>`<rect x="-2.4" y="-13" width="4.8" height="8" rx="2.4" transform="rotate(${i*60})"/>`).join('');
+ const hub=`<circle r="13" fill="#D8CFB8"/><g fill="#241d15">${teeth}</g><circle r="3" fill="#241d15"/>`;
+ rl.innerHTML=hub;rr.innerHTML=hub;}
+function setState(s){
+ uiState=s;document.body.dataset.state=s;
+ btnPlay.classList.toggle('held',s==='play');
+ btnRew.classList.toggle('held',s==='rew');
+ motor.classList.toggle('on',s!=='stop');
+ ov.style.display=s==='stop'?'flex':'none';
+ if(s==='stop')coverDirty=true;
+ if(A.ctx&&A.hiss)A.hiss.gain.setTargetAtTime(s==='play'||s==='rew'?.05:0,A.ctx.currentTime,.06);
+}
+function pressPlay(){
+ if(uiState!=='stop')return;
+ initAudio();A.ctx.resume();
+ clunk();
+ const t0=A.ctx.currentTime+.08;
+ resetRun(t0);
+ previewEnd=t0+.9;coverDirty=true;
+ seq.start();setState('play');
+}
+function pressStop(){
+ if(uiState==='stop')return;
+ seq.halt();clunk();setState('stop');
+}
+function pressRew(){
+ if(uiState==='rew')return;
+ initAudio();A.ctx.resume();
+ prevWasPlay=(uiState==='play');
+ if(prevWasPlay){
+  const cut=A.ctx.currentTime+.06;
+  for(const s of seq.srcs)if(s._t>cut){try{s.stop()}catch(e){}}
+  seq.srcs=seq.srcs.filter(s=>s._t<=cut);
+  seq.schedUntil=cut;
+ }
+ previewEnd=-1;
+ paintQ.length=0;
+ clunk();setLabel('REWIND');
+ EM.ph='rew';EM.sil=false;EM.halfLeft=0;
+ EM.rewTotal=(1.8+Math.random()*.8)*A.ctx.sampleRate;
+ EM.rewLeft=EM.rewTotal;
+ setState('rew');
+ if(!seq.on)seq.start();
+}
+function finishRew(){
+ if(prevWasPlay){resetRun(seq.schedUntil);setState('play');}
+ else{seq.halt();setState('stop');}
+}
+document.getElementById('glass').addEventListener('click',
+ ()=>uiState==='stop'?pressPlay():pressStop());
+btnPlay.addEventListener('click',()=>{pressPlay();btnPlay.blur();});
+btnStop.addEventListener('click',()=>{pressStop();btnStop.blur();});
+btnRew.addEventListener('click',()=>{pressRew();btnRew.blur();});
+addEventListener('keydown',e=>{if(e.repeat)return;
+ if(e.code==='Space'){e.preventDefault();uiState==='stop'?pressPlay():pressStop();}
+ if(e.key==='r'||e.key==='R')pressRew();});
+document.getElementById('vol').addEventListener('input',e=>{
+ vol=e.target.value/100;
+ if(A.master)A.master.gain.setTargetAtTime(.55*vol,A.ctx.currentTime,.02);});
+document.getElementById('calmBtn').addEventListener('click',e=>{
+ calm=!calm;e.target.textContent='CALM: '+(calm?'ON':'OFF');});
+const sp1=document.getElementById('sp1'),sp4=document.getElementById('sp4');
+function setRate(r){rate=r;
+ sp1.classList.toggle('on',r===1);sp4.classList.toggle('on',r===4);}
+sp1.addEventListener('click',()=>setRate(1));
+sp4.addEventListener('click',()=>setRate(4));
+
+/* ---- main loop: paint bytes exactly when they are AUDIBLE ---- */
+let aL=0,aR=0,shownC=-1,last=performance.now();
+function frame(now){
+ requestAnimationFrame(frame);
+ const dt=Math.min((now-last)/1000,.05);last=now;
+ const t=A.ctx?A.ctx.currentTime:now/1000;
+ while(events.length&&events[0].t<t-.3)c0=events.shift().c;
+ while(paintQ.length&&paintQ[0].t<=t){
+  const e=paintQ.shift();
+  if(e.gi!==undefined){
+   tapeCounter++;tapeUsed=Math.min(1,tapeUsed+1/TAPEV);
+   const k=TK[e.gi];
+   if(k===1){const p=TP[e.gi];
+    if(p<6144){revealBM(p);setLabel('SCREEN$ '+Math.min(99,Math.round(p/61.4))+'%');}
+    else{revealAttr(p-6144);setLabel('COLOUR '+Math.min(99,Math.round((p-6144)/7.7))+'%');}
+    picDirty=true;}
+  }else if(e.lab)setLabel(e.lab);
+  else if(e.act==='prog')romPrint('Program: '+NAME);
+  else if(e.act==='ok')romPrint('0 OK, 0:1');
+ }
+ if(uiState==='rew'){
+  tapeCounter=Math.max(0,tapeCounter-dt*2400);
+  tapeUsed=Math.max(0,tapeUsed-dt*.35);
+ }
+ const shown=Math.floor(tapeCounter)%10000;
+ if(shown!==shownC){shownC=shown;
+  const s=String(shown).padStart(4,'0');
+  for(let i=0;i<4;i++)if(dig[i].textContent!==s[i])dig[i].textContent=s[i];}
+ if(uiState==='play'){aL-=dt*130*rate;aR-=dt*240*rate;}
+ else if(uiState==='rew'){aL+=dt*700;aR+=dt*700;}
+ rl.setAttribute('transform',`rotate(${aL})`);
+ rr.setAttribute('transform',`rotate(${aR})`);
+ tapeL.setAttribute('r',(15+(1-tapeUsed)*11).toFixed(1));
+ tapeR.setAttribute('r',(15+tapeUsed*11).toFixed(1));
+ if(previewEnd>0&&t>=previewEnd){previewEnd=-1;resetPic();}
+ draw(t);
+}
+resetPic();
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

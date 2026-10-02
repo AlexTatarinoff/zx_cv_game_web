@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TAPE LOADER V6</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#14110e; --panel:#1b1611; --line:#2f281f; --line2:#3a3125;
+    --txt:#D9D2C2; --dim:#7d745f; --key:#E4DBC6; --ink:#17130e; --red:#D70000;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    background:var(--bg); color:var(--txt);
+    font-family:'Space Mono',monospace;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    min-height:100svh; padding:28px 16px; gap:22px;
+    -webkit-font-smoothing:antialiased; user-select:none;
+  }
+  .wrap{width:min(760px,100%)}
+  header{display:flex; justify-content:space-between; align-items:baseline;
+    padding-bottom:14px; border-bottom:1px solid #241e16; gap:16px}
+  .brand{display:flex; align-items:center; gap:10px; font-size:13px; font-weight:700; letter-spacing:.3em}
+  .sq{width:10px; height:10px; background:var(--red); flex:none}
+  .cur{width:9px; height:15px; background:var(--red); margin-left:6px; animation:blink 1.1s steps(2,start) infinite}
+  @keyframes blink{to{visibility:hidden}}
+  .spec{font-size:9px; letter-spacing:.24em; color:var(--dim); font-weight:700; text-align:right}
+  footer{display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    padding-top:12px; border-top:1px solid #241e16;
+    font-size:9px; font-weight:700; letter-spacing:.18em; color:var(--dim)}
+  #calmBtn{background:none; border:none; font:inherit; color:inherit; cursor:pointer;
+    text-decoration:underline dotted; text-underline-offset:3px; padding:0}
+  #calmBtn:hover{color:var(--txt)}
+  .bezel{background:#1e1913; border:1px solid #332b21; border-radius:18px; padding:20px 20px 12px;
+    box-shadow:0 34px 70px -34px rgba(0,0,0,.85), inset 0 1px 0 rgba(255,255,255,.045)}
+  .bezelInner{display:flex; gap:16px}
+  .glassWrap{flex:1; min-width:0}
+  .glass{position:relative; aspect-ratio:4/3; background:#000; cursor:pointer;
+    border:10px solid #0d0a08; border-radius:18px; overflow:hidden;
+    box-shadow:inset 0 0 60px rgba(0,0,0,.9), inset 0 0 8px #000}
+  canvas{position:absolute; inset:0; width:100%; height:100%; display:block}
+  .fx{position:absolute; inset:0; pointer-events:none; border-radius:inherit}
+  .scan{background:repeating-linear-gradient(0deg, rgba(0,0,0,.2) 0 1px, transparent 1px 3px)}
+  .vig{background:radial-gradient(120% 100% at 50% 45%, transparent 55%, rgba(0,0,0,.5) 100%)}
+  .glare{background:radial-gradient(60% 40% at 24% 8%, rgba(255,255,255,.08), transparent 70%)}
+  .grille{width:54px; border-radius:8px; border:1px solid #31281e; align-self:stretch;
+    background:radial-gradient(circle at 4px 4px, #0a0806 1.6px, transparent 1.9px) 0 0/9px 9px, #211a13}
+  .tvbar{display:flex; justify-content:space-between; align-items:center; padding-top:11px; padding-left:4px}
+  .tvbrand{font-size:8.5px; letter-spacing:.34em; color:#6b6250; font-weight:700}
+  .tvled{display:flex; align-items:center; gap:8px; font-size:8.5px; letter-spacing:.3em; color:#6b6250; font-weight:700}
+  .led{width:7px; height:7px; border-radius:50%; background:var(--red);
+    box-shadow:0 0 6px 1px rgba(215,0,0,.5)}
+  .deck{display:flex; gap:24px; align-items:center; flex-wrap:wrap;
+    background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:18px 22px}
+  .tape{width:300px; flex:none}
+  .tape text{font-family:'Space Mono',monospace}
+  .t1{font-size:9px; letter-spacing:.18em; font-weight:700; fill:#8a7f66}
+  .t2{font-size:24px; font-weight:700; fill:#221c12}
+  .t3{font-size:8.5px; letter-spacing:.14em; fill:#4a4232}
+  .t4{font-size:9px; letter-spacing:.2em; font-weight:700; fill:#a33c2c}
+  .panel{flex:1; min-width:230px; display:flex; flex-direction:column; gap:15px}
+  .lab{font-size:9px; font-weight:700; letter-spacing:.28em; color:var(--dim)}
+  .crow{display:flex; justify-content:space-between; align-items:flex-end}
+  .digits{display:flex; gap:4px; margin-top:7px}
+  .digits span{width:24px; height:32px; line-height:32px; text-align:center;
+    background:#0c0a07; border-radius:4px; font-size:19px; font-weight:700; color:var(--key);
+    box-shadow:inset 0 2px 5px rgba(0,0,0,.9)}
+  .motor{display:flex; flex-direction:column; align-items:center; gap:7px}
+  #motorLed{width:10px; height:10px; border-radius:50%; background:#3a3129;
+    transition:background .15s, box-shadow .15s}
+  #motorLed.on{background:var(--red); box-shadow:0 0 8px 1px rgba(215,0,0,.65)}
+  .keys{display:flex; gap:10px}
+  .keys button{flex:1; padding:11px 0; border:none; border-radius:6px; cursor:pointer;
+    background:var(--key); color:var(--ink);
+    font:700 12px 'Space Mono',monospace; letter-spacing:.22em;
+    box-shadow:0 3px 0 #060504; touch-action:manipulation}
+  .keys button:hover{background:#efe7d2}
+  .keys button:active, .keys button.held{transform:translateY(3px); box-shadow:0 0 0 #060504; background:#d5ccb4}
+  .row2{display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap}
+  .spd{display:flex; gap:6px; align-items:center; flex-wrap:wrap}
+  .spd button{padding:6px 11px; border:1px solid var(--line2); background:transparent; color:var(--dim);
+    font:700 10px 'Space Mono',monospace; letter-spacing:.1em; border-radius:4px; cursor:pointer}
+  .spd button.on{background:var(--red); border-color:var(--red); color:#fff}
+  .phase{display:flex; align-items:center; gap:9px; min-width:0}
+  #phaseLab{font-size:10px; font-weight:700; letter-spacing:.12em; color:var(--txt); white-space:nowrap}
+  .vrow{display:flex; align-items:center; gap:14px}
+  input[type=range]{flex:1; -webkit-appearance:none; appearance:none; height:4px;
+    background:var(--line2); border-radius:2px; outline:none; cursor:pointer}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:14px; height:14px; border-radius:50%;
+    background:var(--key); border:1px solid var(--bg); box-shadow:0 1px 0 #000}
+  input[type=range]::-moz-range-thumb{width:13px; height:13px; border-radius:50%;
+    background:var(--key); border:1px solid var(--bg); box-shadow:0 1px 0 #000}
+  @media (max-width:700px){
+    .spec,.grille{display:none}
+    .deck{flex-direction:column}
+    .tape{width:100%; max-width:340px}
+  }
+</style>
+</head>
+<body data-state="stop">
+<div class="wrap">
+
+  <header>
+    <div class="brand"><span class="sq"></span>TAPE LOADER V6<span class="cur"></span></div>
+    <div class="spec">COVER ON STOP · PLAY BUILDS SCREEN$ · BYTE-TYPED</div>
+  </header>
+
+  <figure class="bezel">
+    <div class="bezelInner">
+      <div class="glassWrap">
+        <div class="glass" id="glass">
+          <canvas id="scr"></canvas>
+          <div class="fx scan"></div>
+          <div class="fx vig"></div>
+          <div class="fx glare"></div>
+        </div>
+      </div>
+      <div class="grille"></div>
+    </div>
+    <div class="tvbar">
+      <span class="tvbrand">PORTAVISION · 20CT SOLID STATE</span>
+      <span class="tvled"><span class="led"></span>MAINS</span>
+    </div>
+  </figure>
+
+  <section class="deck">
+    <svg class="tape" viewBox="0 0 320 204" aria-hidden="true">
+      <rect x="3" y="3" width="314" height="198" rx="14" fill="#241d15" stroke="#3a3125" stroke-width="2"/>
+      <rect x="20" y="14" width="280" height="100" rx="6" fill="#E7DEC8" stroke="#cfc3a4"/>
+      <rect x="20" y="14" width="9" height="100" rx="3" fill="#D70000"/>
+      <text x="44" y="34" class="t1">COMPACT CASSETTE · 30 MIN</text>
+      <text x="286" y="34" class="t4" text-anchor="end">SIDE A</text>
+      <text x="44" y="66" class="t2">LOAD ""</text>
+      <text x="44" y="90" class="t3">KLOTZ 48K — PAPER ARCADE</text>
+      <rect x="38" y="106" width="244" height="72" rx="10" fill="#0f0c09" stroke="#090705" stroke-width="2"/>
+      <circle id="tapeL" cx="104" cy="142" r="26" fill="#33241a" stroke="#120d09" stroke-width="3"/>
+      <circle id="tapeR" cx="216" cy="142" r="16" fill="#33241a" stroke="#120d09" stroke-width="3"/>
+      <g transform="translate(104,142)"><g id="reelL"></g></g>
+      <g transform="translate(216,142)"><g id="reelR"></g></g>
+      <circle cx="38" cy="187" r="4.5" fill="#3b3125" stroke="#191510"/>
+      <circle cx="282" cy="187" r="4.5" fill="#3b3125" stroke="#191510"/>
+      <path d="M132 182 h56 l8 16 h-72 z" fill="#151009" stroke="#0a0806"/>
+      <circle cx="100" cy="190" r="3.4" fill="#191510"/>
+      <circle cx="220" cy="190" r="3.4" fill="#191510"/>
+    </svg>
+
+    <div class="panel">
+      <div class="crow">
+        <div>
+          <span class="lab">COUNTER</span>
+          <div class="digits" id="digits"><span>0</span><span>0</span><span>0</span><span>0</span></div>
+        </div>
+        <div class="motor"><i id="motorLed"></i><span class="lab">MOTOR</span></div>
+      </div>
+      <div class="keys">
+        <button id="btnPlay">PLAY</button>
+        <button id="btnStop">STOP</button>
+        <button id="btnRew">REW</button>
+      </div>
+      <div class="row2">
+        <div class="spd"><span class="lab">SPEED</span>
+          <button id="sp1" class="on">×1</button><button id="sp4">×4</button>
+          <button id="btnPrev">PICT</button>
+        </div>
+        <div class="phase"><span class="lab">BLOCK</span><span id="phaseLab">—</span></div>
+      </div>
+      <div class="vrow">
+        <span class="lab">VOL</span>
+        <input id="vol" type="range" min="0" max="100" value="70" aria-label="volume">
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span>V6 · SPACE — PLAY/STOP · R — REWIND · PICT — TARGET PICTURE</span>
+    <span>HEAVY FLASHING · <button id="calmBtn">CALM: OFF</button></span>
+  </footer>
+</div>
+
+<script>
+(() => {
+'use strict';
+/* ================================================================
+   V6 · PLAYHEAD ARCHITECTURE
+   The whole tape is precomputed ONCE into a single AudioBuffer
+   (real ROM pulse widths). Every tape byte is typed:
+     kind 0 = framing (flag/parity/header)  — no paint
+     kind 2 = data (loader, code)           — counts only
+     kind 1 = screen$ byte                  — paints:
+              P < 6144  -> bitmap byte: 8 pixels of one scanline, B/W
+              P >= 6144 -> attr byte: one 8x8 cell recolours
+   One rAF loop = playhead: paint every byte whose time has come.
+   STOP mode shows the finished colour picture + version line.
+   ================================================================ */
+const PILOT=2168/3.5e6, SYNC1=667/3.5e6, SYNC2=735/3.5e6, BIT0=855/3.5e6, BIT1=1710/3.5e6;
+const FIELD=.02, VIS=.0184, NAME='KLOTZ';
+const RED=[215,0,0], CYANC=[0,215,215], WHITE=[220,220,212];
+let vol=.7, calm=false, rate=1, pictOn=false;
+
+/* ---------------- 8x8 font ---------------- */
+const FONT={
+' ':[0,0,0,0,0,0,0,0],
+'0':[0x3C,0x66,0x6E,0x76,0x66,0x66,0x3C,0],'1':[0x18,0x38,0x18,0x18,0x18,0x18,0x7E,0],
+'6':[0x3C,0x66,0x60,0x7C,0x66,0x66,0x3C,0],
+'-':[0,0,0,0x7E,0,0,0,0],',':[0,0,0,0,0,0x18,0x18,0x30],':':[0,0x18,0x18,0,0x18,0x18,0,0],
+'A':[0x3C,0x66,0x66,0x7E,0x66,0x66,0x66,0],'B':[0x7C,0x66,0x66,0x7C,0x66,0x66,0x7C,0],
+'C':[0x3C,0x66,0x60,0x60,0x60,0x66,0x3C,0],'D':[0x7C,0x66,0x66,0x66,0x66,0x66,0x7C,0],
+'E':[0x7E,0x60,0x60,0x7C,0x60,0x60,0x7E,0],'K':[0x66,0x66,0x6C,0x78,0x6C,0x66,0x66,0],
+'L':[0x60,0x60,0x60,0x60,0x60,0x60,0x7E,0],'M':[0x66,0x7E,0x7E,0x66,0x66,0x66,0x66,0],
+'O':[0x3C,0x66,0x66,0x66,0x66,0x66,0x3C,0],'P':[0x3C,0x66,0x66,0x7E,0x66,0x66,0x66,0],
+'R':[0x7C,0x66,0x66,0x7C,0x6C,0x66,0x66,0],'S':[0x3C,0x66,0x60,0x3C,0x06,0x66,0x3C,0],
+'T':[0x7E,0x18,0x18,0x18,0x18,0x18,0x18,0],'U':[0x66,0x66,0x66,0x66,0x66,0x66,0x3C,0],
+'V':[0x66,0x66,0x66,0x66,0x66,0x3C,0x18,0],'Y':[0x66,0x66,0x66,0x3C,0x18,0x18,0x18,0],
+'Z':[0x7E,0x06,0x0C,0x18,0x30,0x60,0x7E,0],
+'a':[0,0,0,0x3C,0x06,0x3E,0x66,0x3E],'e':[0,0,0,0x3C,0x7E,0x60,0x3C,0],
+'g':[0,0,0x3C,0x66,0x66,0x3E,0x06,0x3C],'m':[0,0,0,0x76,0x7E,0x6E,0x66,0],
+'o':[0,0,0,0x3C,0x66,0x66,0x3C,0],'r':[0,0,0,0x1C,0x36,0x30,0x30,0],
+'s':[0,0,0,0x3E,0x60,0x3C,0x06,0x7C],'t':[0x10,0x10,0x3C,0x10,0x10,0x10,0x1C,0],
+'y':[0,0,0,0x66,0x66,0x3E,0x06,0x3C]};
+
+/* ---------------- loading screen: sunset, bitmap in LINE order ------- */
+const artLin=new Uint8Array(6144);
+const pset=(x,y)=>{if(x>=0&&x<256&&y>=0&&y<184)artLin[y*32+(x>>3)]|=0x80>>(x&7);};
+function txt(s,x0,y0,sc){let x=x0;
+  for(const ch of s){const g=FONT[ch];if(!g){x+=8*sc;continue;}
+    for(let r=0;r<8;r++){const b=g[r];if(!b)continue;
+      for(let c=0;c<8;c++)if(b&(0x80>>c)){
+        if(sc===1)pset(x+c,y0+r);
+        else for(let dy=0;dy<sc;dy++)for(let dx=0;dx<sc;dx++)pset(x+c*sc+dx,y0+r*sc+dy);}}
+    x+=8*sc;}}
+txt('KLOTZ',16,12,4);
+txt('PAPER ARCADE',64,52,1);
+for(let y=56;y<=92;y++)for(let x=166;x<=202;x++)            /* sun */
+  if((x-184)*(x-184)+(y-74)*(y-74)<=324)pset(x,y);
+[[52,62],[82,54],[112,63]].forEach(b=>{pset(b[0],b[1]);pset(b[0]+1,b[1]+1);pset(b[0]+2,b[1]);});
+const peaks=[[0,118],[36,92],[72,108],[108,84],[150,102],[192,88],[228,104],[255,114]];
+for(let x=0;x<256;x++){                                      /* mountain ridge */
+  let i=0;while(i<peaks.length-2&&peaks[i+1][0]<x)i++;
+  const t=(x-peaks[i][0])/(peaks[i+1][0]-peaks[i][0]);
+  const my=Math.round(peaks[i][1]+(peaks[i+1][1]-peaks[i][1])*t);
+  for(let y=my;y<144;y++)pset(x,y);
+}
+for(let y=144;y<176;y++)for(let x=0;x<256;x++)               /* waves */
+  if((y&3)===1&&((x+y*5)%9)<6)pset(x,y);
+for(let y=146;y<172;y+=3)for(let x=172;x<198;x++)            /* sun reflection */
+  if(((x+y)%7)<4)pset(x,y);
+for(let i=0;i<140;i++){const x=(i*67)%256,y=177+(i*37)%7;    /* beach tufts */
+  pset(x,y);if((i&3)===0)pset(x,y-1);}
+
+/* attributes per 8x8 cell: [ink,paper,bright] */
+const NORM=[[0,0,0],[0,0,205],[205,0,0],[205,0,205],[0,205,0],[0,205,205],[205,205,0],[205,205,205]];
+const BRT =[[0,0,0],[0,0,255],[255,0,0],[255,0,255],[0,255,0],[0,255,255],[255,255,0],[255,255,255]];
+const attrB=new Uint8Array(768), cellInk=new Array(768), cellPaper=new Array(768);
+for(let cy=0;cy<24;cy++)for(let cx=0;cx<32;cx++){
+  let a;
+  if(cy>=23)a=[0,0,0];
+  else if(cy===22)a=[0,6,0];                                 /* sand */
+  else if(cy>=18)a=(cx>=20&&cx<=25)?[6,1,1]:[7,1,1];         /* sea + reflection */
+  else if(cy>=7&&cy<=11&&cx>=20&&cx<=25)a=[6,2,1];           /* sun */
+  else if(cy===6&&cx>=8&&cx<=19)a=[7,1,0];                   /* subtitle */
+  else if(cy>=6)a=[0,2,1];                                   /* sunset sky + ridge */
+  else if(cy>=1&&cx>=2&&cx<=22)a=[6,1,1];                    /* title */
+  else a=[0,1,0];                                            /* sky */
+  const i=cy*32+cx, p=a[2]?BRT:NORM;
+  attrB[i]=a[0]|a[1]<<3|a[2]<<6;
+  cellInk[i]=p[a[0]]; cellPaper[i]=p[a[1]];
+}
+/* screen$ payload in tape order: 6144 bitmap bytes then 768 attr bytes */
+const scrAll=new Uint8Array(6912);
+scrAll.set(artLin,0); scrAll.set(attrB,6144);
+
+/* ---------------- tape bytes: flat list, TYPED ---------------- */
+function collectTapeBytes(){
+  const B=[],K=[],P=[];
+  const push=(v,k,p)=>{B.push(v&255);K.push(k);P.push(p);};
+  const block=(flag,data,kind)=>{
+    push(flag,0,0);
+    let x=flag;
+    for(let i=0;i<data.length;i++){push(data[i],kind,i);x^=data[i];}
+    push(x,0,0);
+  };
+  const hb=[0];
+  for(let i=0;i<10;i++)hb.push(i<NAME.length?NAME.charCodeAt(i):32);
+  hb.push(300&255,300>>8, 0,0, 0,128);
+  block(0,hb,0);                                             /* Program header */
+  const lb=new Uint8Array(300); for(let i=0;i<300;i++)lb[i]=(i*97+43)&255;
+  block(255,lb,2);                                           /* BASIC loader   */
+  block(255,scrAll,1);                                       /* SCREEN$        */
+  const cb=new Uint8Array(1400);
+  {let s=12345;for(let i=0;i<1400;i++){s=(s*1664525+1013904223)>>>0;cb[i]=s&255;}}
+  block(255,cb,2);                                           /* CODE           */
+  return {B,K,P};
+}
+
+/* ---------------- picture buffer (256x192) -------------------------- */
+const picCan=document.createElement('canvas'); picCan.width=256; picCan.height=192;
+const picCtx=picCan.getContext('2d');
+const picData=picCtx.createImageData(256,192);
+const INKC=[24,24,22], PAPC=[213,211,199], WHTC=[212,212,202];
+function setPx(x,y,c){const i=(y*256+x)<<2,d=picData.data;d[i]=c[0];d[i+1]=c[1];d[i+2]=c[2];d[i+3]=255;}
+function resetPicture(){
+  for(let y=0;y<184;y++)for(let x=0;x<256;x++)setPx(x,y,PAPC);
+  for(let y=184;y<192;y++)for(let x=0;x<256;x++)setPx(x,y,[0,0,0]);
+}
+function revealBM(p){
+  const row=p>>5; if(row>=184)return;
+  const x0=(p&31)*8, v=artLin[p];
+  for(let k=0;k<8;k++)setPx(x0+k,row,(v&(0x80>>k))?INKC:PAPC);
+}
+function revealAttr(p){
+  const cx=p&31, cy=p>>5; if(cy>=23)return;
+  const i=cy*32+cx, ink=cellInk[i], pap=cellPaper[i];
+  for(let sy=0;sy<8;sy++){
+    const y=cy*8+sy, v=artLin[y*32+cx];
+    for(let sx=0;sx<8;sx++)setPx(cx*8+sx,y,(v&(0x80>>sx))?ink:pap);
+  }
+}
+function renderFullColor(){
+  for(let cy=0;cy<23;cy++)for(let cx=0;cx<32;cx++)revealAttr(cy*32+cx);
+}
+function romPrint(s){
+  for(let y=184;y<192;y++)for(let x=0;x<256;x++)setPx(x,y,[0,0,0]);
+  let x=0;
+  for(const ch of s){const g=FONT[ch];if(g)
+    for(let r=0;r<8;r++){const b=g[r];
+      for(let c=0;c<8;c++)if(b&(0x80>>c))setPx(x+c,184+r,WHTC);}
+    x+=8;}
+}
+
+/* ---------------- audio ---------------- */
+const AUD={actx:null,master:null,hiss:null,noise:null};
+function initAudio(){
+  if(AUD.actx)return;
+  const AC=window.AudioContext||window.webkitAudioContext;
+  AUD.actx=new AC();
+  AUD.master=AUD.actx.createGain(); AUD.master.gain.value=.55*vol;
+  AUD.master.connect(AUD.actx.destination);
+  const sr=AUD.actx.sampleRate, b=AUD.actx.createBuffer(1,sr*1.5,sr), d=b.getChannelData(0);
+  for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+  AUD.noise=b;
+  const src=AUD.actx.createBufferSource(); src.buffer=b; src.loop=true;
+  const f=AUD.actx.createBiquadFilter(); f.type='highpass'; f.frequency.value=900;
+  AUD.hiss=AUD.actx.createGain(); AUD.hiss.gain.value=0;
+  src.connect(f); f.connect(AUD.hiss); AUD.hiss.connect(AUD.master); src.start();
+}
+function clunk(){
+  const t=AUD.actx.currentTime;
+  const o=AUD.actx.createOscillator(), g=AUD.actx.createGain();
+  o.type='sine';
+  o.frequency.setValueAtTime(120,t);
+  o.frequency.exponentialRampToValueAtTime(45,t+.09);
+  g.gain.setValueAtTime(.5,t);
+  g.gain.exponentialRampToValueAtTime(.001,t+.12);
+  o.connect(g); g.connect(AUD.master); o.start(t); o.stop(t+.14);
+  const s=AUD.actx.createBufferSource(); s.buffer=AUD.noise;
+  const f=AUD.actx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=900;
+  const g2=AUD.actx.createGain();
+  g2.gain.setValueAtTime(.35,t);
+  g2.gain.exponentialRampToValueAtTime(.001,t+.05);
+  s.connect(f); f.connect(g2); g2.connect(AUD.master); s.start(t); s.stop(t+.06);
+}
+function whir(dur){
+  const t=AUD.actx.currentTime;
+  const o=AUD.actx.createOscillator(), g=AUD.actx.createGain();
+  o.type='sawtooth';
+  o.frequency.setValueAtTime(60,t);
+  o.frequency.exponentialRampToValueAtTime(700,t+dur*.5);
+  o.frequency.exponentialRampToValueAtTime(90,t+dur);
+  g.gain.setValueAtTime(.16,t);
+  g.gain.linearRampToValueAtTime(.13,t+dur*.5);
+  g.gain.linearRampToValueAtTime(0,t+dur);
+  o.connect(g); g.connect(AUD.master); o.start(t); o.stop(t+dur);
+  const s=AUD.actx.createBufferSource(); s.buffer=AUD.noise; s.loop=true;
+  const f=AUD.actx.createBiquadFilter(); f.type='bandpass'; f.Q.value=2;
+  f.frequency.setValueAtTime(1200,t);
+  f.frequency.exponentialRampToValueAtTime(3500,t+dur*.5);
+  f.frequency.exponentialRampToValueAtTime(800,t+dur);
+  const g2=AUD.actx.createGain();
+  g2.gain.setValueAtTime(.12,t);
+  g2.gain.linearRampToValueAtTime(0,t+dur);
+  s.connect(f); f.connect(g2); g2.connect(AUD.master); s.start(t); s.stop(t+dur);
+}
+
+/* ---------------- build the whole tape into ONE buffer -------------- */
+let tape=null;
+function buildTape(){
+  const sr=AUD.actx.sampleRate, ts=1/rate;
+  const {B,K,P}=collectTapeBytes();
+  const N=B.length;
+  const est=Math.ceil(sr*(N*0.011*ts + 22*ts + 5));
+  const bufA=new Float32Array(est);
+  const FT=[], FC=[];
+  const bEnd=new Float64Array(N);
+  const segs=[];
+  let sp=0, level=1, col=0;
+  const put=ns=>{
+    if(sp>=bufA.length)return false;
+    if(sp+ns>bufA.length)ns=bufA.length-sp;
+    bufA.fill(level*.42,sp,sp+ns); sp+=ns;
+    return true;
+  };
+  const flip=t=>{level=-level; col^=1; FT.push(t); FC.push(col);};
+  const pilot=d=>{
+    segs.push({t:sp/sr,label:'PILOT'});
+    let left=d*ts*sr;
+    while(left>0&&sp<bufA.length-8){
+      flip(sp/sr);
+      const ns=Math.max(1,Math.round(PILOT*ts*sr));
+      put(ns); left-=ns;
+    }
+  };
+  const pause=d=>{
+    segs.push({t:sp/sr,label:'GAP'});
+    sp+=Math.round(d*ts*sr);
+    if(sp>bufA.length)sp=bufA.length;
+  };
+  const block=(b0,b1,label)=>{
+    segs.push({t:sp/sr,label});
+    for(let bi=b0;bi<b1&&sp<bufA.length-8;bi++){
+      const v=B[bi];
+      for(let b=0;b<10;b++){
+        const bit=b===0?0:b<=8?(v>>(b-1))&1:1;
+        const hl=(bit?BIT1:BIT0)*ts;
+        for(let h=0;h<2;h++){
+          flip(sp/sr);
+          put(Math.max(1,Math.round(hl*sr)));
+        }
+      }
+      bEnd[bi]=sp/sr;
+    }
+  };
+  pilot(1.8); block(0,19,'HEADER');
+  pause(.7); pilot(1.4); block(19,321,'LOADER');
+  pause(1.8);
+  pilot(3.2); block(321,7235,'SCREEN$');
+  pause(1.2); pilot(2.0); block(7235,8637,'CODE');
+  segs.push({t:sp/sr,label:'LOADED'});
+  sp+=Math.round(3*sr);
+  if(sp>bufA.length)sp=bufA.length;
+
+  const ab=AUD.actx.createBuffer(1,sp,sr);
+  ab.copyToChannel(bufA.subarray(0,sp),0);
+  tape={buf:ab, DUR:sp/sr, FT:Float64Array.from(FT), FC:Uint8Array.from(FC),
+        bEnd, K:Uint8Array.from(K), P:Uint32Array.from(P),
+        n:N, segs, tEnd:bEnd[N-1], rate};
+}
+
+/* ---------------- playhead state ---------------- */
+let uiState='stop', src=null, t0=0, prevTp=-1;
+let byteIx=0, segIx=0, evPtr=0, curColor=0, lastColor=0;
+let printedP=false, printedOK=false;
+let previewEnd=-1, coverDirty=true;
+let counterShown=0;
+
+const phaseLab=document.getElementById('phaseLab');
+let lastLabel='—';
+function setLabel(s){if(s!==lastLabel){lastLabel=s; phaseLab.textContent=s;}}
+
+function applyByte(i){
+  const k=tape.K[i];
+  if(k===0)return;
+  if(k!==1)return;                        /* only screen$ bytes paint */
+  const p=tape.P[i];
+  if(p<6144){
+    revealBM(p);
+    setLabel('SCREEN$ '+Math.min(99,Math.round(p/61.44))+'%');
+  }else{
+    revealAttr(p-6144);
+    setLabel('COLOUR '+Math.min(99,Math.round((p-6144)/7.68))+'%');
+  }
+}
+function startPlayback(preview){
+  if(!tape||tape.rate!==rate)buildTape();
+  byteIx=0; segIx=0; evPtr=0; curColor=0; prevTp=-1;
+  printedP=false; printedOK=false;
+  resetPicture();
+  t0=AUD.actx.currentTime+.08;
+  previewEnd=preview?t0+.9:-1;
+  src=AUD.actx.createBufferSource();
+  src.buffer=tape.buf; src.loop=true; src.connect(AUD.master);
+  src.start(t0);
+  setLabel(tape.segs[0].label);
+  setState('play');
+}
+
+/* ---------------- CRT renderer ---------------- */
+const scrC=document.getElementById('scr'), ctx=scrC.getContext('2d');
+let dpr=1, cw=0, chh=0;
+function resize(){
+  const r=scrC.getBoundingClientRect();
+  dpr=Math.min(devicePixelRatio||1,2);
+  scrC.width=Math.max(2,Math.round(r.width*dpr));
+  scrC.height=Math.max(2,Math.round(r.height*dpr));
+  cw=r.width; chh=r.height;
+}
+addEventListener('resize',resize); resize();
+
+const NB=264;
+const bCan=document.createElement('canvas'); bCan.width=2; bCan.height=NB;
+const bCtx=bCan.getContext('2d');
+const bImg=bCtx.createImageData(2,NB);
+const PREV=new Float32Array(NB*3);
+function drawCRT(tp){
+  const u=tp%FIELD, fs=tp-u, jv=Math.min(NB,Math.ceil(u/VIS*NB));
+  let ev=evPtr, cur=curColor, lastT=fs-FIELD;
+  while(ev<tape.FT.length&&tape.FT[ev]<=fs-FIELD){cur=tape.FC[ev]; lastT=tape.FT[ev]; ev++;}
+  const calmK=calm?.55:1, keep=calm?.62:.42, d=bImg.data;
+  for(let j=0;j<jv;j++){
+    const o=j*3;
+    PREV[o]*=keep; PREV[o+1]*=keep; PREV[o+2]*=keep;
+    const q=j*8;
+    d[q]=Math.min(255,PREV[o]*1.08); d[q+1]=Math.min(255,PREV[o+1]*1.08);
+    d[q+2]=Math.min(255,PREV[o+2]*1.08); d[q+3]=255;
+    d[q+4]=d[q]; d[q+5]=d[q+1]; d[q+6]=d[q+2]; d[q+7]=255;
+  }
+  const emit=(j,td)=>{
+    while(ev<tape.FT.length&&tape.FT[ev]<=td){cur=tape.FC[ev]; lastT=tape.FT[ev]; ev++;}
+    const c=cur===1?CYANC:RED;
+    const br=(.5+.5*Math.exp(-(td-lastT)/.014))*calmK, o=j*3;
+    const fr=c[0]*br*.58+PREV[o]*keep,
+          fg=c[1]*br*.58+PREV[o+1]*keep,
+          fb=c[2]*br*.58+PREV[o+2]*keep;
+    PREV[o]=fr; PREV[o+1]=fg; PREV[o+2]=fb;
+    const q=j*8;
+    d[q]=Math.min(255,fr*1.08); d[q+1]=Math.min(255,fg*1.08);
+    d[q+2]=Math.min(255,fb*1.08); d[q+3]=255;
+    d[q+4]=d[q]; d[q+5]=d[q+1]; d[q+6]=d[q+2]; d[q+7]=255;
+  };
+  for(let j=jv;j<NB;j++)emit(j,fs+j*VIS/NB);
+  evPtr=ev; curColor=cur; lastColor=cur;
+  bCtx.putImageData(bImg,0,0);
+  ctx.imageSmoothingEnabled=true;
+  ctx.drawImage(bCan,0,0,cw,chh);
+}
+function flatBorder(c,dim){
+  const s=c===1?CYANC:c===2?WHITE:RED, k=(calm?.55:1)*(dim?.4:1);
+  ctx.fillStyle=`rgb(${s[0]*k|0},${s[1]*k|0},${s[2]*k|0})`;
+  ctx.fillRect(0,0,cw,chh);
+}
+function draw(t,tp){
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  let mode;
+  if(uiState==='stop')mode='full';                       /* cover + version beacon */
+  else if(pictOn)mode='full';
+  else if(uiState==='rew')mode='rew';
+  else if(previewEnd>0&&t<previewEnd)mode='full';
+  else mode='play';
+  if(mode==='full'&&coverDirty){
+    renderFullColor();
+    romPrint(uiState==='stop'?'TAPE LOADER V6 - READY':'0 OK, 0:1');
+    coverDirty=false;
+  }
+  picCtx.putImageData(picData,0,0);
+  if(mode==='rew'){
+    flatBorder(lastColor,true);
+  } else if(mode==='play'){
+    if(tp>tape.tEnd+.05)flatBorder(2,false);
+    else drawCRT(tp);
+  } else {
+    ctx.fillStyle='#060504';
+    ctx.fillRect(0,0,cw,chh);
+  }
+  ctx.imageSmoothingEnabled=false;
+  ctx.drawImage(picCan,cw*.1,chh*.1,cw*.8,chh*.8);
+}
+
+/* ---------------- deck controls ---------------- */
+const reelL=document.getElementById('reelL'), reelR=document.getElementById('reelR'),
+      tapeL=document.getElementById('tapeL'), tapeR=document.getElementById('tapeR'),
+      motorLed=document.getElementById('motorLed'),
+      digits=[...document.querySelectorAll('#digits span')],
+      btnPlay=document.getElementById('btnPlay'),
+      btnStop=document.getElementById('btnStop'),
+      btnRew=document.getElementById('btnRew');
+{
+  const teeth=[...Array(6)].map((_,i)=>`<rect x="-2.4" y="-13" width="4.8" height="8" rx="2.4" transform="rotate(${i*60})"/>`).join('');
+  const hub=`<circle r="13" fill="#D8CFB8"/><g fill="#241d15">${teeth}</g><circle r="3" fill="#241d15"/>`;
+  reelL.innerHTML=hub; reelR.innerHTML=hub;
+}
+function setState(s){
+  uiState=s; document.body.dataset.state=s;
+  btnPlay.classList.toggle('held',s==='play');
+  btnRew.classList.toggle('held',s==='rew');
+  motorLed.classList.toggle('on',s!=='stop');
+  if(s==='stop')coverDirty=true;
+  if(AUD.hiss)AUD.hiss.gain.setTargetAtTime(s==='stop'?0:.05,AUD.actx.currentTime,.06);
+}
+function pressPlay(){
+  if(uiState!=='stop')return;
+  initAudio(); AUD.actx.resume();
+  clunk(); startPlayback(true);
+}
+function pressStop(){
+  if(uiState==='stop')return;
+  if(src){src.stop(); src=null;}
+  clunk(); setState('stop');
+}
+let rewTimer=null;
+function pressRew(){
+  if(uiState==='rew')return;
+  initAudio(); AUD.actx.resume();
+  const wasPlaying=uiState==='play';
+  if(src){src.stop(); src=null;}
+  setState('rew'); setLabel('REWIND'); clunk(); whir(1.5);
+  clearTimeout(rewTimer);
+  rewTimer=setTimeout(()=>{
+    if(wasPlaying)startPlayback(false);
+    else setState('stop');
+  },1500);
+}
+
+/* ---------------- inputs ---------------- */
+document.getElementById('glass').addEventListener('click',()=>uiState==='stop'?pressPlay():pressStop());
+btnPlay.addEventListener('click',()=>{pressPlay(); btnPlay.blur();});
+btnStop.addEventListener('click',()=>{pressStop(); btnStop.blur();});
+btnRew.addEventListener('click',()=>{pressRew(); btnRew.blur();});
+addEventListener('keydown',e=>{
+  if(e.repeat)return;
+  if(e.code==='Space'){e.preventDefault(); uiState==='stop'?pressPlay():pressStop();}
+  if(e.key==='r'||e.key==='R')pressRew();
+});
+document.getElementById('vol').addEventListener('input',e=>{
+  vol=e.target.value/100;
+  if(AUD.master)AUD.master.gain.setTargetAtTime(.55*vol,AUD.actx.currentTime,.02);
+});
+document.getElementById('calmBtn').addEventListener('click',e=>{
+  calm=!calm; e.target.textContent='CALM: '+(calm?'ON':'OFF');
+});
+const sp1=document.getElementById('sp1'), sp4=document.getElementById('sp4');
+function setRate(r){
+  rate=r;
+  sp1.classList.toggle('on',r===1); sp4.classList.toggle('on',r===4);
+  if(uiState==='play'&&src){src.stop(); src=null; startPlayback(false);}
+}
+sp1.addEventListener('click',()=>setRate(1));
+sp4.addEventListener('click',()=>setRate(4));
+document.getElementById('btnPrev').addEventListener('click',e=>{
+  pictOn=!pictOn;
+  if(pictOn)coverDirty=true;
+  e.target.classList.toggle('on',pictOn);
+  e.target.blur();
+});
+
+/* ---------------- main loop: THE PLAYHEAD ---------------- */
+let aL=0, aR=0, last=performance.now();
+function frame(now){
+  requestAnimationFrame(frame);
+  const dt=Math.min((now-last)/1000,.05); last=now;
+  const t=AUD.actx?AUD.actx.currentTime:now/1000;
+  let tp=0;
+  if(uiState==='play'&&tape){
+    const raw=t-t0;
+    tp=raw<0?0:raw%tape.DUR;
+    if(tp+.5<prevTp){
+      byteIx=0; segIx=0; evPtr=0; curColor=0;
+      printedP=false; printedOK=false;
+      resetPicture();
+    }
+    prevTp=tp;
+    while(segIx<tape.segs.length-1&&tape.segs[segIx+1].t<=tp){
+      segIx++; setLabel(tape.segs[segIx].label);
+    }
+    while(byteIx<tape.n&&tape.bEnd[byteIx]<=tp){applyByte(byteIx); byteIx++;}
+    if(!printedP&&byteIx>=19){printedP=true; romPrint('Program: '+NAME);}
+    if(!printedOK&&byteIx>=tape.n){printedOK=true; romPrint('0 OK, 0:1'); setLabel('LOADED');}
+    if(previewEnd>0&&t>=previewEnd){previewEnd=-1; resetPicture();}
+    counterShown=byteIx;
+  }
+  if(uiState==='rew')counterShown=Math.max(0,counterShown-dt*6000);
+  const shown=Math.floor(counterShown)%10000;
+  const s=String(shown).padStart(4,'0');
+  for(let i=0;i<4;i++)if(digits[i].textContent!==s[i])digits[i].textContent=s[i];
+  if(uiState==='play'){const v=130*rate; aL-=dt*v; aR-=dt*v*2;}
+  else if(uiState==='rew'){aL+=dt*700; aR+=dt*700;}
+  reelL.setAttribute('transform',`rotate(${aL})`);
+  reelR.setAttribute('transform',`rotate(${aR})`);
+  const used=tape?byteIx/tape.n:0;
+  tapeL.setAttribute('r',(15+(1-used)*11).toFixed(1));
+  tapeR.setAttribute('r',(15+used*11).toFixed(1));
+  draw(t,tp);
+}
+resetPicture();
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
