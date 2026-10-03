@@ -197,7 +197,7 @@ const keys = {};
 /* CRAZY PIVOT: раз за уровень (с вероятностью P_CRAZY_PIVOT) блоки
    перещёлкиваются на новые случайные углы */
 let pivotPending=false, pivotDone=false, pivotIn=0;
-const P_CRAZY_PIVOT=0.35;
+const P_CRAZY_PIVOT=0.45;
 
 
 /* ============ audio (synthesized, no files) ============ */
@@ -378,7 +378,7 @@ function triggerPivot(){
   let n=0;
   for (const b of bricks){
     if (b.dead) continue;
-    b.rot = Math.random()*1.2-0.6;   /* новый случайный угол ±34° */
+    b.rot = Math.random()*1.3-0.6;   /* новый случайный угол */
     n++;
   }
   if (n>0){
@@ -420,7 +420,7 @@ function makeCrack(b){
 /* ============ game flow ============ */
 function resetBall(){ ball.stuck=true; ball.speedMul=1; ball.slowT=0; ball.stretch=0; }
 function start(){
-  S.score=0; S.lives=S.crazy?10:3; S.level=1; S.combo=0; S.shake=0; S.freeze=0;
+  S.score=0; S.lives=S.crazy?3:3; S.level=1; S.combo=0; S.shake=0; S.freeze=0;
   paddle.w=paddle.baseW; paddle.wideT=0;  S.rocket=0; S.rocketReady=false; S.rocketFly=null;
   particles=[]; popups=[]; drops=[]; trail=[];
   buildBricks(1); resetBall();
