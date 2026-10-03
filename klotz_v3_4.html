@@ -194,10 +194,11 @@ const paddle = { x:W/2, y:H-42, w:110, baseW:110, h:14, wideT:0, squash:0 };
 const ball   = { x:W/2, y:0, vx:0, vy:0, r:7, stuck:true, stretch:0, speedMul:1, slowT:0 };
 let bricks=[], particles=[], popups=[], drops=[], trail=[];
 const keys = {};
-/* CRAZY PIVOT: раз за уровень (с вероятностью P_CRAZY_PIVOT) блоки
-   перещёлкиваются на новые случайные углы */
-let pivotPending=false, pivotDone=false, pivotIn=0;
-const P_CRAZY_PIVOT=0.45;
+/* CRAZY PIVOT: раз за уровень (с вероятностью P_CRAZY_PIVOT)
+ блоки плавно доворачиваются на новые углы */
+let pivotPending=false, pivotDone=false, pivotIn=0, pivotAnim=0;
+const P_CRAZY_PIVOT=0.99;
+const PIVOT_DUR=0.8;                       /* длительность плавного доворота, сек */
 
 
 /* ============ audio (synthesized, no files) ============ */
@@ -317,7 +318,7 @@ const hideOverlay = () => { overlay.classList.remove('on'); overlay.classList.re
 /* ============ level construction ============ */
 function buildBricks(level){
   bricks = [];
-  pivotPending=false; pivotDone=false;
+  pivotPending=false; pivotDone=false; pivotAnim=0;
   if (S.crazy){
     buildCrazyBricks(level);
     return;
@@ -370,26 +371,29 @@ function buildCrazyBricks(level){
   bricks = placed;
   pivotPending = Math.random() < P_CRAZY_PIVOT;
   pivotDone = false;
-  pivotIn = 8 + Math.random()*12;    /* сработает через 8–20 сек игрового времени */
+  pivotIn = 4 + Math.random()*1;    /* 8 + 12 было а не 4 + 1 \ сработает через 8–20 сек игрового времени */
 }
 
 function triggerPivot(){
-  pivotDone=true;
-  let n=0;
-  for (const b of bricks){
-    if (b.dead) continue;
-    b.rot = Math.random()*1.3-0.6;   /* новый случайный угол */
-    n++;
-  }
-  if (n>0){
-    popups.push({x:W/2, y:H*0.42, text:'PIVOT!', life:1.3, max:1.3, accent:true, big:true});
-    S.shake=7;
-    tone(180,820,.3,'sawtooth',.4);
-  }
+ pivotDone=true;
+ pivotAnim=PIVOT_DUR;
+ let n=0;
+ for (const b of bricks){
+  if (b.dead) continue;
+  b.rot0 = b.rot;                      /* откуда стартует доворот */
+  b.rotT = Math.random()*1.2-0.6;      /* куда доворачивает (±34°) */
+  n++;
+ }
+ if (n>0){
+  popups.push({x:W/2, y:H*0.42, text:'PIVOT!', life:1.3, max:1.3, accent:true, big:true});
+  S.shake=5;
+  //tone(180,820,.3,'sawtooth',.45);		/* ЗВУК при наступлении ПОВОРОТА! дефолтный вариант*/
+  [196,247,294,370,440].forEach((f,i)=>setTimeout(()=>tone(f,f,.09,'square',.5), i*80)); /* ВАРИАНТ 2 НАРАСТАЮЩАЯ ЛЕСТНИЦА*/
+ }
 }
 
 const targetSpeed = () =>
-  390 * Math.min(1 + (S.level-1)*0.07, 1.45) * ball.speedMul;
+  390 * Math.min(1 + (S.level-1)*0.07, 1.45) * ball.speedMul; //390 - default, 550 - fast, 650 - hardcore
   
  
 
@@ -562,11 +566,23 @@ function moveStep(sdt){
   }
 }
 function update(dt){
-  S.time += dt;
-  if (pivotPending && !pivotDone && S.mode==='play'){
-    pivotIn -= dt;
-    if (pivotIn<=0) triggerPivot();
+ S.time += dt;
+ if (pivotPending && !pivotDone && S.mode==='play'){
+  pivotIn -= dt;
+  if (pivotIn<=0) triggerPivot();
+ }
+ if (pivotAnim>0){
+  pivotAnim = Math.max(0, pivotAnim - dt);
+  const raw = 1 - pivotAnim/PIVOT_DUR;
+  const ease = 1 - Math.pow(1-raw, 3);          /* ease-out: быстро стартует, мягко доезжает */
+  if (!S.muted && AC && Math.random() < dt*8){
+   tone(340+Math.random()*240, 180+Math.random()*120, .08, 'sawtooth', .22);
+  }  
+  for (const b of bricks){
+   if (b.dead) continue;
+   b.rot = b.rot0 + (b.rotT - b.rot0) * ease;
   }
+ }
   if (S.freeze>0){ S.freeze-=dt; }
   else {
     updatePaddle(dt);
