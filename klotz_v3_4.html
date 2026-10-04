@@ -102,6 +102,8 @@
   .top3{margin-top:50px; display:inline-flex; flex-direction:column; gap:6px; width:min(280px,80%)}
   .top5{margin-top:18px; display:inline-flex; flex-direction:column; gap:6px; min-width:min(360px,86%)}
   .trow{display:flex; justify-content:space-between; gap:18px; font-size:13px; font-weight:700; letter-spacing:.12em}
+  .trow .cz{color:var(--accent); font-size:8px; letter-spacing:.18em;
+    border:1px solid var(--accent); padding:1px 5px; margin-left:6px; vertical-align:1px}
   .trow .pl{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
   .trow.dim{color:var(--dim); font-size:10px; letter-spacing:.2em; justify-content:center}
   #nameInp{margin-top:18px; background:transparent; border:none; border-bottom:3px solid var(--ink);
@@ -298,7 +300,7 @@ function saveTop5(t){ localStorage.setItem('klotz.top5', JSON.stringify(t)); }
 function topRowsHtml(count){
   const t=loadTop5().slice(0,count);
   if(!t.length) return '<div class="trow dim">NO SCORES YET — BE THE FIRST</div>';
-  return t.map((e,i)=>`<div class="trow"><span class="pl">${i+1}. ${e.name}${e.crazy?' ⚡':''}</span><span class="sc">${pad6(e.score)}</span></div>`).join('');
+  return t.map((e,i)=>`<div class="trow"><span class="pl">${i+1}. ${e.name}${e.crazy?' <span class="cz">CRAZY</span>':''}</span><span class="sc">${pad6(e.score)}</span></div>`).join('');
 }
 
 function pulseCombo(){
