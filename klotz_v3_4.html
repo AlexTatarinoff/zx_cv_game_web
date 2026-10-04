@@ -541,12 +541,12 @@ function hitBrick(b){
     S.score += gain;
     popups.push({x:cx, y:cy, text:'+'+gain, life:.9, max:.9, accent:S.combo>=3});
     shards(b.x,b.y,b.w,b.h, b.tier===2?INK : b.tier===1?ACCENT : GRAY, 10);
-    const dropChance = S.crazy ? 0.13 : 0.13;
+    const dropChance = S.crazy ? 0.09 : 0.12;
     if (Math.random()<dropChance){
       const r=Math.random();
       const type = S.crazy
         ? (r<.15?'+': r<.50?'E': r<.65?'S': 'R')    /* '+15 явная, E=35, S=15, R=35 явная' */
-        : (r<.45?'E': r<.85?'S': '+');                /* обычный: как было */
+        : (r<.25?'+': r<.55?'E': r<.65?'S': 'R');                /* обычный: +25жизни E30 S10 R35 — ракеты пришли! */
       drops.push({x:cx, y:cy, vy:150, type, wob:Math.random()*6});
     }
     S.freeze=.035; S.shake=Math.min(10, 2.5+S.combo*.6);
