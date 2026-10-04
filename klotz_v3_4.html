@@ -54,6 +54,7 @@
   /* ---------- playfield ---------- */
   .frame{position:relative; border:2px solid var(--ink); background:var(--paper)}
   canvas{display:block; width:100%; aspect-ratio:920/620; cursor:none; touch-action:none}
+  .bezel{cursor:none}
   /* print crop marks */
   .mark{position:absolute; width:15px; height:15px; pointer-events:none; opacity:.85}
   .mark.tl{top:-19px; left:-19px; border-top:2px solid var(--ink); border-left:2px solid var(--ink)}
@@ -437,7 +438,7 @@ function buildCrazyBricks(level){
   bricks = placed;
   pivotPending = Math.random() < P_CRAZY_PIVOT;
   pivotDone = false;
-  pivotIn = 4 + Math.random()*1;    /* 8 + 12 было а не 4 + 1 \ сработает через 8–20 сек игрового времени */
+  pivotIn = 8 + Math.random()*12;    /* 8 + 12 было а не 4 + 1 \ сработает через 8–20 сек игрового времени */
 }
 
 function triggerPivot(){
@@ -459,7 +460,7 @@ function triggerPivot(){
 }
 
 const targetSpeed = () =>
-  390 * Math.min(1 + (S.level-1)*0.07, 1.45) * ball.speedMul; //390 - default, 550 - fast, 650 - hardcore
+  400 * Math.min(1 + (S.level-1)*0.07, 1.45) * ball.speedMul; //400 - default, 550 - fast, 650 - hardcore
   
  
 
@@ -544,7 +545,7 @@ function hitBrick(b){
     if (Math.random()<dropChance){
       const r=Math.random();
       const type = S.crazy
-        ? (r<.23?'E': r<.40?'S': r<.50?'R': '+')     /* crazy: полезные реже в 1.5x */
+        ? (r<.15?'+': r<.50?'E': r<.65?'S': 'R')    /* '+15 явная, E=35, S=15, R=35 явная' */
         : (r<.45?'E': r<.85?'S': '+');                /* обычный: как было */
       drops.push({x:cx, y:cy, vy:150, type, wob:Math.random()*6});
     }
@@ -886,7 +887,7 @@ function draw(){
 }
 
 /* ============ input ============ */
-canvas.addEventListener('pointermove', e => {
+document.addEventListener('pointermove', e => {
   const r=canvas.getBoundingClientRect();
   const x=(e.clientX-r.left)/r.width*W;
   if (S.mode==='play'||S.mode==='ready')
