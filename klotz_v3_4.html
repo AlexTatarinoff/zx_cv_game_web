@@ -98,6 +98,21 @@
   @keyframes blink{to{visibility:hidden}}
   .best{margin-top:18px; font-size:11px; letter-spacing:.25em; color:var(--dim); font-weight:700}
   .finalScore{font-size:clamp(34px,6vw,54px); font-weight:700; margin-top:8px}
+  
+  .top3{margin-top:50px; display:inline-flex; flex-direction:column; gap:6px; width:min(280px,80%)}
+  .top5{margin-top:18px; display:inline-flex; flex-direction:column; gap:6px; min-width:min(360px,86%)}
+  .trow{display:flex; justify-content:space-between; gap:18px; font-size:13px; font-weight:700; letter-spacing:.12em}
+  .trow .pl{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .trow.dim{color:var(--dim); font-size:10px; letter-spacing:.2em; justify-content:center}
+  #nameInp{margin-top:18px; background:transparent; border:none; border-bottom:3px solid var(--ink);
+    color:var(--ink); font:700 26px 'Space Mono',monospace; letter-spacing:.3em; text-align:center;
+    width:min(360px,80%); padding:6px 0; outline:none; text-transform:uppercase}
+  #nameInp::placeholder{color:rgba(22,21,17,.3)}
+  .rowBtns{margin-top:22px; display:flex; gap:14px; justify-content:center}
+  .rowBtns button{border:2px solid var(--ink); background:transparent; color:var(--ink);
+    font:700 11px 'Space Mono',monospace; letter-spacing:.22em; padding:8px 18px; cursor:pointer}
+  .rowBtns button:hover{background:var(--ink); color:var(--paper)}
+ 
   .newbest{display:inline-block; margin-top:14px; padding:6px 14px; background:var(--accent);
     color:var(--paper); font-size:10px; font-weight:700; letter-spacing:.3em}
 
@@ -188,7 +203,7 @@ bg.width = W*2; bg.height = H*2;
 const S = {
   mode:'menu', paused:false, score:0, level:1, lives:3, combo:0,
   best:+(localStorage.getItem('klotz.best')||0),
-  muted:false, crazy:false, rocket:0, rocketReady:false, shake:0, freeze:0, time:0
+  muted:false, crazy:false, nameEntry:false, rocket:0, rocketReady:false, shake:0, freeze:0, time:0
 };
 const paddle = { x:W/2, y:H-42, w:110, baseW:110, h:14, wideT:0, squash:0 };
 const ball   = { x:W/2, y:0, vx:0, vy:0, r:7, stuck:true, stretch:0, speedMul:1, slowT:0 };
@@ -262,6 +277,30 @@ function updateHUD(){
     livesEl.appendChild(d);
   }
 }
+
+/* ============ TOP-5 table ============ */
+function loadTop5(){
+  try{ return JSON.parse(localStorage.getItem('klotz.top5')||'[]'); }
+  catch(e){ return []; }
+}
+function qualifiesForTop(score){
+  if (score<=0) return false;
+  const t=loadTop5();
+  return t.length<5 || score>t[t.length-1].score;
+}
+function addTopScore(name,score,crazy){
+  const t=loadTop5();
+  t.push({name:(name||'ANON').toUpperCase().slice(0,8)||'ANON', score, crazy:!!crazy});
+  t.sort((a,b)=>b.score-a.score);
+  saveTop5(t.slice(0,5));
+}
+function saveTop5(t){ localStorage.setItem('klotz.top5', JSON.stringify(t)); }
+function topRowsHtml(count){
+  const t=loadTop5().slice(0,count);
+  if(!t.length) return '<div class="trow dim">NO SCORES YET — BE THE FIRST</div>';
+  return t.map((e,i)=>`<div class="trow"><span class="pl">${i+1}. ${e.name}${e.crazy?' ⚡':''}</span><span class="sc">${pad6(e.score)}</span></div>`).join('');
+}
+
 function pulseCombo(){
   comboWrap.classList.remove('pop'); void comboWrap.offsetWidth;
   comboWrap.classList.add('pop');
@@ -289,10 +328,12 @@ function showMenu(){
       </div>
       <div class="ctoggle" id="crazyTgl">CRAZY MODE: <b>OFF</b></div>
       <div class="cta">CLICK TO START<i class="caret"></i></div>
-      <div class="best">BEST ${pad6(S.best)}</div>
+      <div class="top3">${topRowsHtml(3)}</div>
     </div>`;
 }
-function showGameOver(newBest){
+function showGameOverFinal(){
+  const t=loadTop5();
+  const rows = t.map((e,i)=>`<div class="trow"><span class="pl">${i+1}. ${e.name}${e.crazy?' ⚡':''}</span><span class="sc">${pad6(e.score)}</span></div>`).join('');
   overlay.className='overlay on';
   overlay.innerHTML = `
     <div>
@@ -300,10 +341,33 @@ function showGameOver(newBest){
       <h1 class="mid">GAME OVER<span class="dot">.</span></h1>
       <div class="lab" style="margin-top:22px">FINAL SCORE</div>
       <div class="finalScore">${pad6(S.score)}</div>
-      ${newBest ? '<div class="newbest">NEW BEST</div>'
-                : `<div class="best">BEST ${pad6(S.best)}</div>`}
+      <div class="top5">${rows}</div>
       <div class="cta">CLICK TO RETRY<i class="caret"></i></div>
     </div>`;
+}
+function showNameEntry(){
+  S.nameEntry=true;
+  overlay.className='overlay on snap';
+  overlay.innerHTML = `
+    <div>
+      <div class="kicker">TOP 5 — NEW ENTRY!</div>
+      <h1 class="mid">${pad6(S.score)}</h1>
+      <div class="tag">TYPE YOUR NAME · EMPTY = ANON</div>
+      <input id="nameInp" maxlength="8" autocomplete="off" spellcheck="false" placeholder="ANON">
+      <div class="rowBtns">
+        <button id="nameSave">SAVE</button>
+        <button id="nameSkip">SKIP</button>
+      </div>
+    </div>`;
+  const inp=document.getElementById('nameInp');
+  setTimeout(()=>inp.focus(),50);
+  const done=v=>{ addTopScore(v,S.score,S.crazy); S.nameEntry=false; showGameOverFinal(); };
+  document.getElementById('nameSave').addEventListener('click',()=>done(inp.value));
+  document.getElementById('nameSkip').addEventListener('click',()=>done(''));
+  inp.addEventListener('keydown',ev=>{
+    if (ev.key==='Enter'){ ev.preventDefault(); done(inp.value); }
+    if (ev.key==='Escape'){ ev.preventDefault(); done(''); }
+  });
 }
 function showPause(){
   overlay.className='overlay on dim';
@@ -446,8 +510,9 @@ function loseLife(){
     S.mode='over';
     const nb = S.score > S.best;
     if (nb){ S.best=S.score; localStorage.setItem('klotz.best', S.best); }
-    S.rocketFly=null; S.rocket=0; S.rocketReady=false;	
-    showGameOver(nb);
+    S.rocketFly=null; S.rocket=0; S.rocketReady=false;
+    if (qualifiesForTop(S.score)) showNameEntry();
+    else showGameOverFinal();
   } else { resetBall(); S.mode='ready'; S.rocketFly=null; }
 }
 function levelClear(){
@@ -840,6 +905,7 @@ canvas.addEventListener('pointerdown', e => {
 
 overlay.addEventListener('pointerdown', e => {
   initAudio();
+  if (S.nameEntry) return;                    /* ввод имени: клики не стартуют игру */
   const tgl=e.target.closest('#crazyTgl');
   if (tgl && S.mode==='menu'){ S.crazy=!S.crazy; tgl.classList.toggle('on',S.crazy);
     tgl.querySelector('b').textContent=S.crazy?'ON':'OFF';
@@ -848,6 +914,7 @@ overlay.addEventListener('pointerdown', e => {
   else if (S.paused) togglePause();
 });
 addEventListener('keydown', e => {
+  if (S.nameEntry) return;                    /* ввод имени: клавиши идут в поле */
   initAudio();
   keys[e.code]=true;
   if (e.code==='Space'){
