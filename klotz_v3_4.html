@@ -336,7 +336,7 @@ function showMenu(){
 }
 function showGameOverFinal(){
   const t=loadTop5();
-  const rows = t.map((e,i)=>`<div class="trow"><span class="pl">${i+1}. ${e.name}${e.crazy?' ⚡':''}</span><span class="sc">${pad6(e.score)}</span></div>`).join('');
+  const rows = t.map((e,i)=>`<div class="trow"><span class="pl">${i+1}. ${e.name}${e.crazy?' <span class="cz">CRAZY</span>':''}</span><span class="sc">${pad6(e.score)}</span></div>`).join('');
   overlay.className='overlay on';
   overlay.innerHTML = `
     <div>
@@ -888,6 +888,7 @@ function draw(){
 
 /* ============ input ============ */
 document.addEventListener('pointermove', e => {
+  if (S.paused) return;                    /* пауза замораживает биту: читы не работают */
   const r=canvas.getBoundingClientRect();
   const x=(e.clientX-r.left)/r.width*W;
   if (S.mode==='play'||S.mode==='ready')
