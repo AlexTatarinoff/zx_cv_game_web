@@ -211,7 +211,7 @@ const S = {
 };
 const paddle = { x:W/2, y:H-42, w:110, baseW:110, h:14, wideT:0, squash:0 };
 const ball   = { x:W/2, y:0, vx:0, vy:0, r:7, stuck:true, stretch:0, speedMul:1, slowT:0 };
-let bricks=[], particles=[], popups=[], drops=[], trail=[];
+let bricks=[], particles=[], popups=[], drops=[], trail=[], rockets=[];
 const keys = {};
 /* CRAZY PIVOT: раз за уровень (с вероятностью P_CRAZY_PIVOT)
  блоки плавно доворачиваются на новые углы */
@@ -511,7 +511,7 @@ function makeCrack(b){
 function resetBall(){ ball.stuck=true; ball.speedMul=1; ball.slowT=0; ball.stretch=0; }
 function start(){
   S.score=0; S.lives=S.crazy?3:3; S.level=1; S.combo=0; S.shake=0; S.freeze=0;
-  paddle.w=paddle.baseW; paddle.wideT=0;  S.rocket=0; S.rocketReady=false; S.rocketFly=null;
+  paddle.w=paddle.baseW; paddle.wideT=0;  S.rocket=0; S.rocketReady=false; rockets=[];
   particles=[]; popups=[]; drops=[]; trail=[];
   buildBricks(1); resetBall();
   S.mode='ready'; S.paused=false;
@@ -532,15 +532,15 @@ function loseLife(){
     S.mode='over';
     const nb = S.score > S.best;
     if (nb){ S.best=S.score; localStorage.setItem('klotz.best', S.best); }
-    S.rocketFly=null; S.rocket=0; S.rocketReady=false;
+    rockets=[]; S.rocket=0; S.rocketReady=false;	
     if (qualifiesForTop(S.score)) showNameEntry();
     else showGameOverFinal();
-  } else { resetBall(); S.mode='ready'; S.rocketFly=null; }
+  } else { resetBall(); S.mode='ready'; rockets=[]; }
 }
 function levelClear(){
   S.score += 500; snd.clear();
   popups.push({x:W/2, y:H/2, text:'BONUS +500', life:1.1, max:1.1, accent:true, big:true});
-  S.level++; buildBricks(S.level); resetBall(); S.rocketFly=null;
+  S.level++; buildBricks(S.level); resetBall(); rockets=[];
   S.mode='ready'; showBanner(pad2(S.level)); updateHUD();
 }
 function togglePause(){
@@ -696,23 +696,24 @@ function update(dt){
   }
   
   // rocket shell
-  if (S.rocketFly && S.mode==='play' && !S.paused){
-    const F=S.rocketFly;
-    F.y -= 620*dt;                                   /* скорость снаряда */
+  for (let ri=rockets.length-1; ri>=0; ri--){
+    const F=rockets[ri];
+    if (S.mode!=='play' || S.paused) break;
+    F.y -= 620*dt;
+    let gone=false;
     for (const b of bricks){
       if (b.dead) continue;
       if (F.x > b.x-2 && F.x < b.x+b.w+2 && F.y-10 < b.y+b.h && F.y > b.y){
         if (b.oneWay){
-          /* односторонний: снаряд уничтожает его целиком, но взрывается */
           b.dead=true; S.combo++;
           const gain = POINTS[b.tier]*Math.min(S.combo,5);
           S.score += gain;
           popups.push({x:b.x+b.w/2,y:b.y+b.h/2,text:'+'+gain,life:.9,max:.9,accent:true});
           shards(b.x,b.y,b.w,b.h, b.tier===2?INK:b.tier===1?ACCENT:GRAY, 12);
-          S.rocketFly=null; snd.rocketBoom3(); updateHUD();
+          snd.rocketBoom3(); updateHUD();
           if (bricks.every(k=>k.dead)) levelClear();
+          gone=true;
         } else {
-          /* обычный: снимает слой и ПРОБИВАЕТ дальше (двухслойный — минус hp тоже) */
           b.hp--;
           if (b.hp<=0){ b.dead=true; S.combo++;
             const gain=POINTS[b.tier]*Math.min(S.combo,5); S.score+=gain;
@@ -724,8 +725,8 @@ function update(dt){
         break;
       }
     }
-    if (S.rocketFly && F.y < -20) S.rocketFly=null;  /* улетел за экран */
-  }  
+    if (gone || F.y < -20) rockets.splice(ri,1);
+  }
   
   // drops
   for (let i=drops.length-1;i>=0;i--){
@@ -857,19 +858,19 @@ function draw(){
     ctx.fillStyle=PAPER;
     ctx.fillRect(lx-1.5, ly-14, 3, 5);                      /* прорезь */
   }
-  // flying rocket shell
-  if (S.rocketFly){
+  // flying rocket shells
+  for (const F of rockets){
     ctx.save();
     ctx.fillStyle=ACCENT;
     ctx.beginPath();
-    ctx.moveTo(S.rocketFly.x, S.rocketFly.y-10);
-    ctx.lineTo(S.rocketFly.x+4, S.rocketFly.y);
-    ctx.lineTo(S.rocketFly.x-4, S.rocketFly.y);
+    ctx.moveTo(F.x, F.y-10);
+    ctx.lineTo(F.x+4, F.y);
+    ctx.lineTo(F.x-4, F.y);
     ctx.closePath(); ctx.fill();
     ctx.fillStyle=INK;
-    ctx.fillRect(S.rocketFly.x-2, S.rocketFly.y, 4, 6);
+    ctx.fillRect(F.x-2, F.y, 4, 6);
     ctx.fillStyle=ACCENT;
-    ctx.fillRect(S.rocketFly.x-1, S.rocketFly.y+6, 2, 4+Math.sin(S.time*40)*3); /* пламя дрожит */
+    ctx.fillRect(F.x-1, F.y+6, 2, 4+Math.sin(S.time*40)*3); /* пламя дрожит */
     ctx.restore();
   }
 
@@ -916,8 +917,8 @@ document.addEventListener('pointermove', e => {
 
 function fireRocket(){
   if (!S.rocketReady || S.rocket<=0 || S.mode!=='play' || S.paused) return;
-  S.rocket--; S.rocketReady = S.rocket>0;
-  S.rocketFly = {x:paddle.x, y:paddle.y-paddle.h/2-18, hit:new Set()};
+  S.rocket--; if (S.rocket<=0) S.rocketReady=false;
+  rockets.push({x:paddle.x, y:paddle.y-paddle.h/2-18});
   snd.launch();
 }
 canvas.addEventListener('pointerdown', e => {
