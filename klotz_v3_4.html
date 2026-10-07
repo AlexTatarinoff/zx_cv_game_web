@@ -256,7 +256,25 @@ const snd = {
   launch:() => tone(430,620,.09,'triangle',.45),
   lose:  () => { tone(300,60,.5,'sawtooth',.5); hiss(.2,.35); },
   power: () => { tone(520,660,.07,'triangle',.5); setTimeout(()=>tone(660,880,.09,'triangle',.5),70); },
-  clear: () => [523,659,784,1047].forEach((f,i)=>setTimeout(()=>tone(f,f,.12,'triangle',.5), i*95))
+  clear: () => [523,659,784,1047].forEach((f,i)=>setTimeout(()=>tone(f,f,.12,'triangle',.5), i*95)),
+  rocketBoom1: () => {
+    tone(800,60,.3,'square',.6); hiss(.25,.45);
+  },
+  rocketBoom2: () => {
+    tone(200,900,.15,'triangle',.5); setTimeout(()=>tone(900,80,.25,'square',.6),120); hiss(.3,.4);
+  },
+  rocketBoom3: () => {
+    hiss(.35,.55); tone(120,40,.35,'sawtooth',.5); setTimeout(()=>tone(600,200,.12,'square',.4),80);
+  },
+  rocketBoom4: () => {
+    tone(300,150,.1,'square',.5);
+    setTimeout(()=>tone(500,100,.12,'square',.55),70);
+    setTimeout(()=>{ tone(150,30,.4,'sawtooth',.65); hiss(.35,.5); },140);
+  },
+  rocketBoom5: () => {
+    for (let i=0;i<4;i++) setTimeout(()=>tone(300+Math.random()*500,80,.1,'square',.45), i*60);
+    setTimeout(()=>{ tone(100,25,.45,'sawtooth',.65); hiss(.4,.5); },200);
+  }
 };
 
 /* ============ DOM refs & HUD ============ */
@@ -542,7 +560,7 @@ function hitBrick(b){
     S.score += gain;
     popups.push({x:cx, y:cy, text:'+'+gain, life:.9, max:.9, accent:S.combo>=3});
     shards(b.x,b.y,b.w,b.h, b.tier===2?INK : b.tier===1?ACCENT : GRAY, 10);
-    const dropChance = S.crazy ? 0.09 : 0.12;
+    const dropChance = S.crazy ? 0.9 : 0.12;
     if (Math.random()<dropChance){
       const r=Math.random();
       const type = S.crazy
@@ -691,7 +709,7 @@ function update(dt){
           S.score += gain;
           popups.push({x:b.x+b.w/2,y:b.y+b.h/2,text:'+'+gain,life:.9,max:.9,accent:true});
           shards(b.x,b.y,b.w,b.h, b.tier===2?INK:b.tier===1?ACCENT:GRAY, 12);
-          S.rocketFly=null; snd.brk(S.combo); updateHUD();
+          S.rocketFly=null; snd.rocketBoom3(); updateHUD();
           if (bricks.every(k=>k.dead)) levelClear();
         } else {
           /* обычный: снимает слой и ПРОБИВАЕТ дальше (двухслойный — минус hp тоже) */
@@ -699,9 +717,9 @@ function update(dt){
           if (b.hp<=0){ b.dead=true; S.combo++;
             const gain=POINTS[b.tier]*Math.min(S.combo,5); S.score+=gain;
             shards(b.x,b.y,b.w,b.h, b.tier===2?INK:b.tier===1?ACCENT:GRAY, 10);
+            snd.rocketBoom3(); updateHUD();
             if (bricks.every(k=>k.dead)) levelClear();
-          } else b.crack=makeCrack(b);
-          snd.brk(S.combo); updateHUD();
+          } else { b.crack=makeCrack(b); snd.crack(); updateHUD(); }
         }
         break;
       }
