@@ -1,4 +1,4 @@
-::DATA SCIENCE\MACHINE LEARNING ENGINEER::
+::DATA SCIENCE, MACHINE LEARNING ENGINEER::
 
 === YANDEX CROWD ===
 October 2025 — May 2026 8 months
@@ -8,8 +8,8 @@ October 2025 — May 2026 8 months
 === YANDEX PRACTICUM ===
 July 2024 — July 2025 1 year
 :: STUDENT - DATA SCIENTIST ::
-- studied classical machine learning models, fundamentals of statistics and probability theory;
-- worked on projects on data science and machine learning, some of them are posted on my Github.
+- studied classical machine learning models, basics of stats and probs theory;
+- worked on projects on data science and machine learning, both classic and nn
 
 === VK ===
 July 2024 — May 2025 11 months
