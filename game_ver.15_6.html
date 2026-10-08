@@ -326,7 +326,7 @@ function buildArt(){
   if(hdr[y>>3])continue;
   for(let b=0;b<RC;b++)for(let k=0;k<8;k++){
    const x=b*8+k;
-   if(y<128&&x>=288)continue;
+   if(y<128&&x>=292)continue;
    const gi=y*RC+b;
    if(art[gi]&(0x80>>k))continue;
    const h=(((x+1)*73856093)^((y+1)*19349663))>>>0;
@@ -359,6 +359,7 @@ function loadPhotoCanvas(){
 function mergePhoto(){
  if(!pDat)return;
  const d=pDat,lum=c=>.299*c[0]+.587*c[1]+.114*c[2],dk=c=>Math.round(c*.32);
+ const FRAME=4;                              /* невидимая бумажная рамка фото: слева+снизу, px */
  for(let cy=0;cy<16;cy++)for(let cx=0;cx<12;cx++){
   const L=new Float32Array(64),C=[];let sum=0;
   for(let sy=0;sy<8;sy++)for(let sx=0;sx<8;sx++){
@@ -383,6 +384,7 @@ function mergePhoto(){
   const cut=(lum(ink)+lum(pap))/2;
   for(let sy=0;sy<8;sy++)for(let sx=0;sx<8;sx++){
    const xx=288+cx*8+sx,y=cy*8+sy,mask=0x80>>(xx&7);
+   if(xx<292||xx>=380||y>=124){art[y*RC+(xx>>3)]&=~mask;continue;}   /* рамка: слева, справа, снизу */
    if(L[sy*8+sx]<cut)art[y*RC+(xx>>3)]|=mask;
    else art[y*RC+(xx>>3)]&=~mask;
   }
@@ -662,8 +664,6 @@ function romHears(seg){          /* слышит ли ROM этот сегмен�
  if(s.lab==='HEADER')return prog===target||!target; /* свой заголовок; при LOAD "" — первый */
  return hdrAccepted&&prog===target;             /* данные — только после принятого заголовка */
 }
-
-
 
 function applySeg(tNow){
  const s=SEGS[EM.segIx];
