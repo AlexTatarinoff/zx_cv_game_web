@@ -108,7 +108,7 @@ footer{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;paddin
  </div>
 </div>
 
-<div class="hint" id="hint">TYPE <span class="kbd">LOAD ""</span> AND PRESS <span class="kbd">ENTER</span></div>
+<!-- <div class="hint" id="hint">TYPE <span class="kbd">LOAD ""</span> AND PRESS <span class="kbd">ENTER</span></div> -->
 <div class="deck">
  <svg class="tape" viewBox="0 0 320 204" aria-hidden="true">
   <rect x="3" y="3" width="314" height="198" rx="14" fill="#241d15" stroke="#3a3125" stroke-width="2"/>
@@ -121,7 +121,7 @@ footer{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;paddin
   <text x="274" y="56" text-anchor="middle" class="t4" style="fill:#fff">A</text>
   
   <text x="44" y="60" class="t2">LOAD ""</text>
-  <text x="46" y="79" class="t3" letter-spacing="2" font-weight="700" fill="#221c12">CV</text>
+  <text x="46" y="79" class="t3" letter-spacing="2" font-weight="700" fill="#221c12">CV A. TATARINOV</text>
   <line x1="44" y1="83" x2="216" y2="83" stroke="#8a7f66" stroke-width="1.4"/>
   <text x="46" y="95" class="t3" letter-spacing="2" font-weight="700" fill="#221c12">KLOTZ 48K</text>
   <line x1="44" y1="99" x2="216" y2="99" stroke="#8a7f66" stroke-width="1.4"/>
@@ -227,6 +227,8 @@ const SW=384,SH=320,RC=48,PKN=15360,AN=1920,TOTAL=17280;
 const PROW=16,NCW=34,WCW=46;          /* photo: cols 36-47, rows 0-15 (96x128 px); text wraps left */
 
 let cvText=`
+::DATA SCIENCE, MACHINE LEARNING ENGINEER::
+
 === YANDEX CROWD ===
 October 2025 - May 2026 8 months
 :: ASSESSOR ::
@@ -235,8 +237,8 @@ October 2025 - May 2026 8 months
 === YANDEX PRACTICUM ===
 July 2024 - July 2025 1 year
 :: STUDENT - DATA SCIENTIST ::
-- studied classical machine learning models, fundamentals of statistics and probability theory;
-- worked on projects on data science and machine learning, some of them are posted on my Github.
+- studied classical machine learning models, basics of stats and probs theory;
+- worked on projects on data science and machine learning, both classic and nn
 
 === VK ===
 July 2024 - May 2025 11 months
@@ -423,7 +425,7 @@ function buildKlotzArt(){
   return pts[i][1]+(pts[i+1][1]-pts[i][1])*t;};
  put('KLOTZ',112,9,4);
  put('PAPER ARCADE',144,45,1);
- put('© 2026 KLOTZ SOFTWARE',104,296,1);
+ put('© 2026 KLOTZ SPIELE SOFT',98,296,1);
  /* --- небо: солнце + птицы --- */
  for(let y=58;y<=126;y++)for(let x=158;x<=226;x++)
   if((x-192)*(x-192)+(y-92)*(y-92)<=1156)px(x,y);
