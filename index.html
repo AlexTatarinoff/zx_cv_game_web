@@ -76,7 +76,8 @@ footer{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;paddin
 .tvled{display:flex;align-items:center;gap:8px;font:700 8.5px 'Space Mono',monospace;letter-spacing:.3em;line-height:1;
  color:#3a352b;text-shadow:0 -1px 1px rgba(0,0,0,.9),0 1px 1px rgba(255,250,230,.25)}
 .led{width:7px;height:7px;border-radius:50%;background:var(--red);box-shadow:0 0 6px 1px rgba(215,0,0,.5)}
-
+/* MOBILE BOOT INPUT: невидимый input поверх экрана — тап открывает нативную клавиатуру */
+#mi{position:absolute;left:0;bottom:0;width:100%;height:1px;opacity:0;border:none;background:transparent;color:transparent;caret-color:transparent;font-size:16px;pointer-events:none;z-index:7}
 </style>
 </head>
 <body data-state="stop">
@@ -86,6 +87,7 @@ footer{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;paddin
   <div class="glassWrap">
    <div class="glass" id="glass">
     <canvas id="scr"></canvas>
+    <input id="mi" type="text" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" enterkeyhint="go" aria-hidden="true" tabindex="-1">
    </div>
   </div>
   <div class="grille">
@@ -1180,6 +1182,7 @@ btnFwd.addEventListener('click',()=>{pressFwd();btnFwd.blur();});
 btnReset.addEventListener('click',()=>{pressReset();btnReset.blur();});
 
 addEventListener('keydown',e=>{if(e.repeat)return;
+ if(e.target&&e.target.id==='mi')return;   /* скрытый мобильный input сам маршрутизирует ввод */
  if(mode==='boot'){handleBootKey(e);return;}
  if(romReading&&(e.key==='Escape'||(e.code==='Space'&&e.shiftKey))){
   e.preventDefault();breakLoad();return;}
@@ -1395,6 +1398,34 @@ function handleBootKey(e){
   return;
  } 
 }
+
+
+/* ---- MOBILE BOOT INPUT: тап по экрану -> скрытый input -> нативная клавиатура ---- */
+const mi=document.getElementById('mi');
+const miIsTouch=matchMedia('(pointer:coarse)').matches||'ontouchstart' in window;
+function miSync(){
+ bootInp=mi.value.toUpperCase().replace(/[\u201C\u201D\u2018\u2019]/g,'"').slice(0,44);
+ cpyDone=true;bootErrT=0;bootDirty=true;
+}
+mi.addEventListener('input',e=>{
+ if(mode!=='boot')return;
+ if(e.inputType==='insertLineBreak'){mi.value='';submitBoot();return;}  /* Enter софт-клавиатуры (iOS) */
+ miSync();
+});
+mi.addEventListener('keydown',e=>{
+ if(mode!=='boot')return;
+ if(e.key==='Enter'){e.preventDefault();mi.value='';submitBoot();if(mode!=='boot')mi.blur();}
+});
+document.getElementById('btnReset').addEventListener('click',()=>{mi.value='';});
+if(miIsTouch){
+ const glassEl=document.getElementById('glass');
+ function miTap(ev){
+  if(mode==='boot'&&!romReading){ev.preventDefault();mi.focus();}
+ }
+ glassEl.addEventListener('pointerdown',miTap);
+ glassEl.addEventListener('touchstart',miTap,{passive:false});  /* iOS: preventDefault держит фокус */
+}
+
 
 resetPic();
 requestAnimationFrame(frame);
